@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<canvas id="myCanvas" width="300" height="300" style="border:1px solid #d3d3d3;">
+Your browser does not support the HTML5 canvas tag.</canvas>
+
+<p>Click the button to analyze the influence network</p>
+
+<input type="text" id="inet" value="xxx">
+
+<button onclick="fillInfl()">1. fill inf net</button>
+<button onclick="estdInfl()">2. Estimate Influence</button>
+<button onclick="showNet()">Show Network</button>
+
+<p>msgs direct: </p><p id="nmdir"></p>
+<p>msgs indirect: </p><p id="nmind"></p>
+
+<script>
+"use strict";
+
+var testNetSize = 10;
+var infNet = [];
+
+function fillInfl() { // build random influence network
+
+	var infnode = {
+		name: "someone",
+		index: 0,
+		inf: [], // influences
+		istr: [],
+		infby: [], // influenced by
+		ibystr: [],
+		locx: 0,
+		locy: 0
+	};
+	
+	for (var i=0; i<testNetSize; i++) {
+		infnode.index = i;
+		infnode.name = "some" + i;
+		for (var j=0; j<i; j++) {
+			if ( Math.random() > 0.9 ) {
+				infnode.inf.push(j);
+				infnode.istr.push(getRandomInt(0, 10));
+				infNet[j].infby.push(i);
+				infNet[j].ibystr.push(getRandomInt(0, 10));
+			}
+		}
+		infnode.locx = getRandomInt(20, 280);
+		infnode.locy = getRandomInt(20, 280);
+		infNet.push(JSON.parse(JSON.stringify(infnode))); // dirty trick to clone object
+	}
+	
+	for (var i=0; i<testNetSize; i++) {
+		console.log('- ' + JSON.stringify(infNet[i]));
+	}
+}
+
+function estdInfl() { // calculate messages needed to influence network
+	var msghit = [];
+	var msgctdir = 0;
+	var msgctind = 0;
+	
+	for (var i=0; i<testNetSize; i++) {
+		msghit.push(infNet[i].index);
+		if ( infNet[i].infby.length == 0 ) {
+			msgctdir++;
+		} else {
+			msgctind++;
+		}
+	}
+    document.getElementById("nmdir").innerHTML = msgctdir;
+	document.getElementById("nmind").innerHTML = msgctind;
+}
+
+function showNet() { // draw network with influence
+    var c=document.getElementById("myCanvas");
+	var ctx=c.getContext("2d");
+	ctx.font="10px Verdana";
+	
+	for (var i=0; i<testNetSize; i++) {
+		ctx.fillText(infNet[i].name, infNet[i].locx, infNet[i].locy);
+		// draw influence edges
+		for (var j=0; j<infNet[i].inf.length; j++) {
+			ctx.beginPath();
+			ctx.moveTo(infNet[i].locx, infNet[i].locy);
+			ctx.lineTo(infNet[infNet[i].inf[j]].locx, infNet[infNet[i].inf[j]].locy);
+			ctx.strokeStyle="black";
+			ctx.stroke();
+		}
+	}
+}
+
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+</script>
+
+</body>
+</html>

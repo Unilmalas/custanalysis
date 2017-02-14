@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<p>Click the button to analyze the string for runs</p>
+
+<input type="text" id="crun" value="010010010111101010">
+
+<button onclick="findRuns()">Find Runs</button>
+
+<p>length of longest run: </p><p id="longstrun"></p>
+<p>time since longest run: </p><p id="tlongstrun"></p>
+<p>t since last contact: </p><p id="tlastc"></p>
+<p>t average: </p><p id="tavrg"></p>
+<p>regularity: </p><p id="regval"></p>
+
+<script>
+"use strict";
+
+function findRuns() {
+
+	var crunStr = document.getElementById("crun").value;
+	
+	// longest run length and time since
+	var mlen=0;
+	var clen=0;
+	var tsincelr=0;
+	// time since last event
+	var last1=0;
+	// average event-weighted time
+	var tavrg=0;
+	// regularity
+	var regval=0.0;
+	
+	for (var i=0; i<crunStr.length; i++) {
+		if ( crunStr.charAt(i) == '1' ) {
+			clen++;
+			last1=crunStr.length-i-1;
+			tavrg+=crunStr.length-i;
+		} else {
+			if ( clen > mlen ) {
+				mlen=clen;
+				tsincelr=crunStr.length-i;
+			}
+			clen=0;
+		}
+		if ( i>0 ) { // for regularity fold with 11-pattern
+			regval+=parseInt(crunStr.charAt(i-1))*(-0.1)+parseInt(crunStr.charAt(i))*(1);
+		}
+	}
+	tavrg/=crunStr.length;
+	regval+=2;
+	regval/=crunStr.length;
+	
+    document.getElementById("longstrun").innerHTML = mlen;
+	document.getElementById("tlongstrun").innerHTML = tsincelr;
+	document.getElementById("tlastc").innerHTML = last1;
+	document.getElementById("tavrg").innerHTML = tavrg;
+	document.getElementById("regval").innerHTML = regval;
+}
+</script>
+
+</body>
+</html>
