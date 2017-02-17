@@ -27,6 +27,17 @@
 <script>
 "use strict";
 
+// bucket elimination example for Bayesian Network (Dechter 1996)
+// I found his paper very clear up to the implementation of the actual algorithm
+// so trying on my own from there...
+// steps:
+// 1. encode BN by resolving conditional probabilities
+// 2. order dependencies
+// 3. order variables
+// 4. fill CPDs (to test, just random Ps and variables can only take 0 or 1 i.e. true or false)
+// 5. read CPD for given node an dependency subset (in dev)
+// 6. lambdas and P-resolving via buckets (planned) for given query
+
 var bnarr = []; // array of encoded probability objects, for now global
 
 function encodeProb() { // encode probabilities as object with event as string and dependencies as array of strings
@@ -202,7 +213,7 @@ function readCPD(ev, evval, depval) { // ev=node name, evval=event value (0 or 1
 	return -1;
 }
 
-function calcLmd() { // calculate lamdas for query (starting at lowest bucket)
+function calcLmd() { // calculate lambdas for query (starting at lowest bucket)
 	document.getElementById("lamdas").innerHTML = readCPD("a", 1, [0]);
 }
 
