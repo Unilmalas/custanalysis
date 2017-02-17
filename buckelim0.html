@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<p>Click the button to encode the depending probability</p>
+
+<input type="text" id="praw" value="P(a|b)">
+
+<button onclick="encodeProb()">1. Encode Probability</button>
+
+<button onclick="depOrder()">2. Dependency Order</button>
+
+<p>encoded probs: </p><p id="encprob"></p>
+
+<button onclick="varOrder()">3. Variable Order</button>
+
+<p>variable order: </p><p id="varord"></p>
+
+<button onclick="fillCPDs()">4. Fill CPDs</button>
+
+<p>CPDs: </p><p id="cpds"></p>
+
+<button onclick="calcLmd()">5. Calculate Lamdas</button>
+
+<p>Lamdas: </p><p id="lamdas"></p>
+
+<script>
+"use strict";
+
+var bnarr = []; // array of encoded probability objects, for now global
+
+function encodeProb() { // encode probabilities as object with event as string and dependencies as array of strings
+	var cprob = {
+		event: "a",
+		depend: [],
+		depth: 0, // depth in tree, will help to order dependencies
+		index: 0,
+		depind: [],
+		pvals: [] // probability values for CPDs (stored as true/false for each dependency and the corresponding p-value)
+	};
+	var prawStr = document.getElementById("praw").value;
+	var ppos = prawStr.indexOf("P(");
+	var dpos = prawStr.indexOf("|");
+	if ( dpos < 0 ) { // no dependencies
+		dpos = prawStr.indexOf(")");
+		cprob.event = prawStr.slice(ppos + 2, dpos);
+	} else  {
+		cprob.event = prawStr.slice(ppos + 2, dpos);
+		prawStr = prawStr.slice(dpos + 1, prawStr.length - 1);
+		cprob.depend = prawStr.split(",");
+	}
+	bnarr.push(cprob); // add to main BN array
+	//console.log('encoded prob: ' + JSON.stringify(cprob));
+	document.getElementById("encprob").innerHTML = JSON.stringify(cprob);
+}
+
+function depOrder() { // order conditional probabilities into a tree structure by their dependencies
+	// depth in tree is the number of dependencies
+	for ( var i=0; i<bnarr.length; i++) {
+		if ( bnarr[i].depend.length == 0 ) {
+			bnarr[i].depth = 0;
+			bnarr[i].depind = 0;
+		} else {
+			bnarr[i].depth = bnarr[i].depend.length;
+		}
+	}
+	// sort by depth
+	bnarr.sort(compare);
+
+	// number indices (will be somewhat in order later due to previous depth ordering)
+	var cindex = 0;
+	for ( var i=0; i<bnarr.length; i++) {
+		bnarr[i].index = cindex;
+		cindex++;
+	}
+	
+	// loop over depth 1+: fill other dependencies
+	for ( var i=0; i<bnarr.length; i++) {
+		if ( bnarr[i].depth > 0 ) {
+			for ( var j=0; j<bnarr[i].depend.length; j++)
+				bnarr[i].depind[j] = indexOfEvent(bnarr[i].depend[j]);
+		}
+	}
+	
+	// check results
+	for ( var i=0; i<bnarr.length; i++) {
+		console.log('bnarr[' + i + ']: ' + JSON.stringify(bnarr[i]));
+	}
+}
+
+function indexOfEvent(event) { // find the index of an event in bnarr (for now global)
+	for ( var i=0; i<bnarr.length; i++) {
+		if ( bnarr[i].event == event ) return i;
+	}
+	return -1;
+}
+
+function compare(a,b) { // compare depth of event in BN tree (for depth sort)
+	if (a.depth < b.depth)
+		return -1;
+	if (a.depth > b.depth)
+		return 1;
+	return 0;
+}
+
+function varOrder() { // variable ordering based on ordered BN
+	var sortedVars = "variable order: ";
+	for ( var i=0; i<bnarr.length; i++) {
+		//console.log(bnarr[i].event);
+		sortedVars += bnarr[i].event + ", ";
+	}
+	document.getElementById("varord").innerHTML = sortedVars;
+}
+
+// CPDs
+// simple example: P(a) ---> P(b|a)
+// a, b can only take values 0 and 1
+// CPDs for nodes:
+// a   P(a)   b a   P(b|a)
+// 0   0.6    0 0   0.2
+// b   0.2    0 1   0.3
+//            1 0   0.5
+//            1 1   0.1
+// query: b=1: lambda_b(a) = sum P(b|a) over b=1
+// P(a|b=1) = sum P(a) * lambda_b(a) over b=1 = P(0)*lambda_b(0) + P(1)*lambda_b(1) for b=1
+// gives 0.6 * 0.5 + 0.2 * 0.1 = 0.3 + 0.02 = 0.32
+function fillCPDs() { // for a first test just fill the CPDs with random P-values
+	var cpdSize = 0;
+	var cpdoutput = "";
+	for ( var i=0; i<bnarr.length; i++) { // for each node in the BN
+		// cpd size = 2^number of dependencies; array size for cpd: 2^no. of dependencies * (no. of dependencies + 1)
+		cpdSize = Math.pow(2, bnarr[i].depend.length + 1); // node i: cpd for all permutations of t and f on dependencies and node event
+		cpdoutput += " node ";
+		//console.log('node ' + bnarr[i].event + ' length: ' + bnarr[i].depend.length);
+		// create a pattern like this on node e:
+		// e  d0 d1 P  --> 2^ndep+1 lines, ndep+2 colums
+		// t  t  t  0.8
+		// t  t  f  0.3
+		// t  f  t  0.1
+		// t  f  f  0.02
+		// f  t  t  0.6
+		// f  t  f  0.2
+		// f  f  t  0.1
+		// f  f  f  0.05
+		// flip t to f or reverse on every 2 % 2^k
+		for ( var k=0; k<bnarr[i].depend.length + 1; k++) { // for each dependency at the given node plus for node event (k=0)
+			cpdoutput += " dep ";
+			var torf = 0;
+			//console.log('dep ' + bnarr[i].depend[k] + ' cpdlen ' + cpdSize);
+			for ( var j=0; j<cpdSize; j++) { // permute true and false
+				var flip=0;
+				//console.log('flip logic k: ' + k + ' mod: ' + j%Math.pow(2, k));
+				if ( j%Math.pow(2, (bnarr[i].depend.length - k + 1)) == 0 ) flip=1;
+				if ( flip == 1 || k==0) torf = torf==0 ? 1 : 0; // flip true and false - always for 1st dependency
+				bnarr[i].pvals[j+k*cpdSize]=torf; // set true or false
+				cpdoutput += torf + " : ";
+				//console.log('torf: ' + torf + ' for j: ' + j + ' flip: ' + flip);
+				if ( k == bnarr[i].depend.length - 1 || bnarr[i].depend.length == 0 ) {
+					bnarr[i].pvals[j+(k+1)*cpdSize] = Math.random(); // for now set random P
+				}
+				//console.log('pvals: ' + bnarr[i].pvals[j+(k+1)*cpdSize] + ' at k=' + k + ' dep len ' + bnarr[i].depend.length);
+			}
+		}
+	}
+	document.getElementById("cpds").innerHTML = cpdoutput;
+}
+
+function readCPD(ev, evval, depval) { // ev=node name, evval=event value (0 or 1), depval=array of dependency values (0 or 1)
+	// returns probability for given event node and dependencies or -1 if cpd-entry not found
+	var i=0;
+	var cpdSize = 0;
+	var retp = [];
+	for ( i=0; i<bnarr.length; i++) {
+		if ( bnarr[i].event == ev ) break;
+	}
+	console.log('event: ' + bnarr[i].event + ' at index i=' + i);
+	cpdSize = Math.pow(2, bnarr[i].depend.length + 1); // node i: cpd for all permutations of t and f on dependencies and node event
+	var k=0;
+	for ( var j=0; j<cpdSize; j++) { // permute true and false
+		var cpdlinefound=false;
+		for ( k=0; k<bnarr[i].depend.length + 1; k++) { // k==0: node event value, k==1,...: dep values
+			if ( k == 0 ) {
+				console.log('evval: ' + bnarr[i].pvals[j+k*cpdSize] + ' at k=' + k + ' and j=' + j);
+				if ( bnarr[i].pvals[j+k*cpdSize] == evval ) {
+					cpdlinefound=true;
+				} else continue;
+			} else {
+				if ( bnarr[i].pvals[j+k*cpdSize] == depval[k] ) {
+					// foo
+				} else {
+					console.log('depval: ' + bnarr[i].pvals[j+(k+1)*cpdSize] + ' at k=' + k + ' and j=' + j);
+					cpdlinefound=false;
+					continue;
+				}
+			}
+		}
+		console.log('return: ' + bnarr[i].pvals + ' at index i=' + i + ' j ' + j);
+		var indpval = j+(bnarr[i].depend.length)*cpdSize;
+		console.log('cpdsz ' + cpdSize + ' index pvals ' + indpval)
+		if ( cpdlinefound ) return bnarr[i].pvals[indpval];
+	}
+	return -1;
+}
+
+function calcLmd() { // calculate lamdas for query (starting at lowest bucket)
+	document.getElementById("lamdas").innerHTML = readCPD("a", 1, [0]);
+}
+
+</script>
+
+</body>
+</html>
