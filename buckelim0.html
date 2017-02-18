@@ -4,7 +4,7 @@
 
 <p>Click the button to encode the depending probability</p>
 
-<input type="text" id="praw" value="P(a|b)">
+<input type="text" id="praw" value="P(b|a)">
 
 <button onclick="encodeProb()">1. Encode Probability</button>
 
@@ -22,7 +22,11 @@
 
 <button onclick="calcLmd()">5. Calculate Lamdas</button>
 
-<p>Lamdas: </p><p id="lamdas"></p>
+<p>Lamda0: </p><p id="lamda0"></p>
+<p>Lamda1: </p><p id="lamda1"></p>
+<p>a0: </p><p id="a0"></p>
+<p>a1: </p><p id="a1"></p>
+<p>query: </p><p id="query0"></p>
 
 <script>
 "use strict";
@@ -36,7 +40,7 @@
 // 3. order variables
 // 4. fill CPDs (to test, just random Ps and variables can only take 0 or 1 i.e. true or false)
 // 5. read CPD for given node an dependency subset
-// 6. lambdas and P-resolving via buckets (planned) for given query
+// 6. lambdas and P-resolving via buckets for given query - implemented for simple example
 
 var bnarr = []; // array of encoded probability objects, for now global
 
@@ -219,8 +223,20 @@ function readCPD(ev, evval, depval) { // ev=node name, evval=event value (0 or 1
 }
 
 function calcLmd() { // calculate lambdas for query (starting at lowest bucket)
-	var mydeps = [0, 0];
-	document.getElementById("lamdas").innerHTML = readCPD("a", 0, mydeps);
+	var mydeps = [1, 0];
+	var l0 = readCPD("b", 1, mydeps);
+	document.getElementById("lamda0").innerHTML = l0;
+	mydeps = [1, 1];
+	var l1 = readCPD("b", 1, mydeps);
+	document.getElementById("lamda1").innerHTML = l1;
+	mydeps = [0];
+	var a0 = readCPD("a", 0, mydeps);
+	document.getElementById("a0").innerHTML = a0;
+	mydeps = [1];
+	var a1 = readCPD("a", 1, mydeps);
+	document.getElementById("a1").innerHTML = a1;
+	
+	document.getElementById("query0").innerHTML = l0 * a0 + l1 * a1;
 }
 
 </script>
