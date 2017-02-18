@@ -35,7 +35,7 @@
 // 2. order dependencies
 // 3. order variables
 // 4. fill CPDs (to test, just random Ps and variables can only take 0 or 1 i.e. true or false)
-// 5. read CPD for given node an dependency subset (in dev)
+// 5. read CPD for given node an dependency subset
 // 6. lambdas and P-resolving via buckets (planned) for given query
 
 var bnarr = []; // array of encoded probability objects, for now global
@@ -154,7 +154,7 @@ function fillCPDs() { // for a first test just fill the CPDs with random P-value
 		// f  f  t  0.1
 		// f  f  f  0.05
 		// flip t to f or reverse on every 2 % 2^k
-		for ( var k=0; k<bnarr[i].depend.length + 1; k++) { // for each dependency at the given node plus for node event (k=0)
+		for ( var k=0; k<(bnarr[i].depend.length+1); k++) { // for each dependency at the given node plus for node event (k=0)
 			cpdoutput += " dep ";
 			var torf = 0;
 			//console.log('dep ' + bnarr[i].depend[k] + ' cpdlen ' + cpdSize);
@@ -163,13 +163,13 @@ function fillCPDs() { // for a first test just fill the CPDs with random P-value
 				//console.log('flip logic k: ' + k + ' mod: ' + j%Math.pow(2, k));
 				if ( j%Math.pow(2, (bnarr[i].depend.length - k + 1)) == 0 ) flip=1;
 				if ( flip == 1 || k==0) torf = torf==0 ? 1 : 0; // flip true and false - always for 1st dependency
-				bnarr[i].pvals[j+k*cpdSize]=torf; // set true or false
+				bnarr[i].pvals[k*cpdSize+j]=torf; // set true or false
 				cpdoutput += torf + " : ";
 				//console.log('torf: ' + torf + ' for j: ' + j + ' flip: ' + flip);
-				if ( k == bnarr[i].depend.length - 1 || bnarr[i].depend.length == 0 ) {
-					bnarr[i].pvals[j+(k+1)*cpdSize] = Math.random(); // for now set random P
+				if ( k == bnarr[i].depend.length || bnarr[i].depend.length == 0 ) {
+					bnarr[i].pvals[(k+1)*cpdSize+j] = Math.random(); // add a column for p-values, for now set random P
 				}
-				//console.log('pvals: ' + bnarr[i].pvals[j+(k+1)*cpdSize] + ' at k=' + k + ' dep len ' + bnarr[i].depend.length);
+				//console.log('pvals: ' + bnarr[i].pvals[(k+1)*cpdSize+j] + ' at k=' + k + ' dep len ' + bnarr[i].depend.length);
 			}
 		}
 	}
@@ -184,37 +184,43 @@ function readCPD(ev, evval, depval) { // ev=node name, evval=event value (0 or 1
 	for ( i=0; i<bnarr.length; i++) {
 		if ( bnarr[i].event == ev ) break;
 	}
-	console.log('event: ' + bnarr[i].event + ' at index i=' + i);
+	console.log('event: ' + bnarr[i].event + ' at index i=' + i + ' dep ' + depval);
 	cpdSize = Math.pow(2, bnarr[i].depend.length + 1); // node i: cpd for all permutations of t and f on dependencies and node event
 	var k=0;
 	for ( var j=0; j<cpdSize; j++) { // permute true and false
 		var cpdlinefound=false;
-		for ( k=0; k<bnarr[i].depend.length + 1; k++) { // k==0: node event value, k==1,...: dep values
+		for ( k=0; k<(bnarr[i].depend.length+1); k++) { // k==0: node event value, k==1,...: dep values
 			if ( k == 0 ) {
-				console.log('evval: ' + bnarr[i].pvals[j+k*cpdSize] + ' at k=' + k + ' and j=' + j);
-				if ( bnarr[i].pvals[j+k*cpdSize] == evval ) {
+				console.log('evval: ' + bnarr[i].pvals[k*cpdSize+j] + ' at k=' + k + ' and j=' + j);
+				if ( bnarr[i].pvals[k*cpdSize+j] == evval ) {
 					cpdlinefound=true;
+					console.log('ev found ' + k);
 				} else continue;
 			} else {
-				if ( bnarr[i].pvals[j+k*cpdSize] == depval[k] ) {
-					// foo
+				console.log('depval at k=' + k + ' is ' + depval[k] + ' compares to ' + bnarr[i].pvals[k*cpdSize+j]);
+				if ( bnarr[i].pvals[k*cpdSize+j] == depval[k] ) {
+					if ( k == bnarr[i].depend.length && cpdlinefound ) {
+						console.log('depval found');
+						break;
+					}
 				} else {
-					console.log('depval: ' + bnarr[i].pvals[j+(k+1)*cpdSize] + ' at k=' + k + ' and j=' + j);
+					console.log('depval: ' + bnarr[i].pvals[k*cpdSize+j] + ' at k=' + k + ' and j=' + j);
 					cpdlinefound=false;
 					continue;
 				}
 			}
 		}
 		console.log('return: ' + bnarr[i].pvals + ' at index i=' + i + ' j ' + j);
-		var indpval = j+(bnarr[i].depend.length)*cpdSize;
-		console.log('cpdsz ' + cpdSize + ' index pvals ' + indpval)
+		var indpval = (bnarr[i].depend.length+1)*cpdSize+j;
+		console.log('cpdsz ' + cpdSize + ' index pvals ' + indpval + ' rval ' + bnarr[i].pvals[indpval] + ' cpdfd ' + cpdlinefound);
 		if ( cpdlinefound ) return bnarr[i].pvals[indpval];
 	}
 	return -1;
 }
 
 function calcLmd() { // calculate lambdas for query (starting at lowest bucket)
-	document.getElementById("lamdas").innerHTML = readCPD("a", 1, [0]);
+	var mydeps = [0, 0];
+	document.getElementById("lamdas").innerHTML = readCPD("a", 0, mydeps);
 }
 
 </script>
