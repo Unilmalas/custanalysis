@@ -10,6 +10,7 @@ public class FetchURLData {
 	public static void main(String[] args) {
 		String searchTerm = "aspirin";
 		if (args.length > 0) searchTerm = args[0];
+		String cookieHeader = "";
 			
 		try {
 			URL url = new URL("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + searchTerm + "");
@@ -27,6 +28,25 @@ public class FetchURLData {
 			String jrnlStr = new String("");
 			String yearStr = new String("");
 			
+			// read cookies, see http://docs.oracle.com/javase/1.5.0/docs/guide/deployment/deployment-guide/cookie_support.html
+			URLConnection connection = url.openConnection();
+			List<String> cookies = connection.getHeaderFields().get("Set-Cookie");
+			//System.out.println(cookies.toString());
+			// temporary to build request cookie header
+			StringBuilder sb = new StringBuilder();
+			if (cookies != null) {
+				for (String cookie : cookies) {
+					if (sb.length() > 0) {
+						sb.append("; ");
+					}
+					// only want the first part of the cookie header that has the value
+					String value = cookie.split(";")[0];
+					sb.append(value);
+				}
+			}
+			// build request cookie header to send on all subsequent requests
+			cookieHeader = sb.toString();
+			
 			// publication master list as a tree map (unique and sorted)
 			TreeMap<String,Publication> pubList = new TreeMap<String,Publication>();
 			
@@ -36,6 +56,7 @@ public class FetchURLData {
 			// fill publications
 			while (null != (strTemp = br.readLine())) {
 				rsltPos++;
+				
 				//titlePos = strTemp.indexOf(strDocTitle);
 				for (String resStr: strTemp.split(strRslt)) {
 					titlePos = resStr.indexOf(strDocTitle);
@@ -98,28 +119,35 @@ public class FetchURLData {
 				String key = entry.getKey();
 				AuthorLink value = entry.getValue();
 				//System.out.println(key + " : " + value.PrintLinkedAuth());
-				System.out.println(value.author + " : " + value.PrintLinkedAuth());
+				//System.out.println(value.author + " : " + value.PrintLinkedAuth());
 			}
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 		
-		/*
+		System.out.println("++++++++++++++++++++++++++++++++++++");
 		
-		// nasty: 2+ result page only accessible via "next page" - did not get this to work via POST...
+		// nasty: 2+ result page only accessible via "next page" - finally got this to work: need these form fields filled plus the cookie
+		// ( a lot of network-log reading in Chromes developer tools )
 		
 		try {
-			URL purl = new URL("https://www.ncbi.nlm.nih.gov/pubmed/?term=Ruxolitinib");
-			
+			URL purl = new URL("https://www.ncbi.nlm.nih.gov/pubmed");
 			// fill data of POST request
 			Map<String,Object> params = new LinkedHashMap<>(); // Map interface maps unique keys to values.
-			//params.put("name", "Freddie the Fish");
-			//params.put("email", "fishie@seamail.example.com");
-			//params.put("reply_to_thread", 10394);
-			//params.put("message", "somemessage xxxxxxxxxxx.");
 			// form data: EntrezSystem2.PEntrez.PubMed.Pubmed_ResultsPanel.Pubmed_Pager.CurrPage=3
-			params.put("EntrezSystem2.PEntrez.PubMed.Pubmed_ResultsPanel.Pubmed_Pager.Page", "2");
+			params.put("term", searchTerm);
+			params.put("EntrezSystem2.PEntrez.PubMed.Pubmed_PageController.PreviousPageName", "results");
+			params.put("EntrezSystem2.PEntrez.PubMed.Pubmed_ResultsPanel.Pubmed_Pager.cPage", "1");
+			params.put("EntrezSystem2.PEntrez.PubMed.Pubmed_ResultsPanel.Pubmed_Pager.CurrPage", "2");
+			params.put("EntrezSystem2.PEntrez.PubMed.Pubmed_ResultsPanel.Pubmed_Pager.cPage", "1");
+			params.put("EntrezSystem2.PEntrez.DbConnector.Db", "pubmed");
+			params.put("EntrezSystem2.PEntrez.DbConnector.Term", searchTerm);
+			params.put("EntrezSystem2.PEntrez.DbConnector.LastQueryKey", "1");
+			params.put("EntrezSystem2.PEntrez.DbConnector.Cmd", "PageChanged");
+			params.put("p$a", "EntrezSystem2.PEntrez.PubMed.Pubmed_ResultsPanel.Pubmed_Pager.Page");
+			params.put("p$l", "EntrezSystem2");
+			params.put("p$st", "pubmed");
 			
 			StringBuilder postData = new StringBuilder();
 			for (Map.Entry<String,Object> param : params.entrySet()) { // loops over arrays: int[] nums = ...; for (int num : nums) ...
@@ -132,12 +160,13 @@ public class FetchURLData {
 					// ...
 				}
 			}
-
+			
 			// build POST request from data and execute
 			try {
 				byte[] postDataBytes = postData.toString().getBytes("UTF-8");
 				HttpURLConnection conn = (HttpURLConnection)purl.openConnection();
 				conn.setRequestMethod("POST");
+				conn.setRequestProperty("Cookie", cookieHeader);
 				conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 				conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
 				conn.setDoOutput(true);
@@ -145,8 +174,6 @@ public class FetchURLData {
 
 				// read response
 				BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
-				for (int c; (c = br.read()) >= 0;)
-					System.out.print((char)c);
 				String strTemp = "";
 				String strRslt = new String("rslt");
 				int rsltPos = 0;
@@ -175,6 +202,6 @@ public class FetchURLData {
 			
 		} catch (MalformedURLException ex) {
 			//do exception handling here
-		} */
+		} 
 	}
 }
