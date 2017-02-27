@@ -9,7 +9,10 @@ public class PubNet {
  
 	public static void main(String[] args) {
 		String searchTerm = "aspirin";
+		int maxPages = 3;
 		if (args.length > 0) searchTerm = args[0];
+		if (args.length > 1) maxPages = Integer.parseInt(args[1]);
+		
 		String strRslt = new String("rslt");
 		String strDocTitle = new String("docsum_title");
 		String cookieHeader = "";
@@ -89,7 +92,7 @@ public class PubNet {
 		// nasty: 2+ result page only accessible via "next page" - finally got this to work: need these form fields filled plus the cookie
 		// ( a lot of network-log reading in Chromes developer tools )
 		
-		for ( int cPage=2; cPage<5; cPage++) { // for now 4 pages plus the first one
+		for ( int cPage=2; cPage<maxPages; cPage++) { // for now 4 pages plus the first one
 			try {
 				URL purl = new URL("https://www.ncbi.nlm.nih.gov/pubmed");
 				// fill data of POST request

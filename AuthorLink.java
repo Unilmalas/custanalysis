@@ -33,13 +33,15 @@ public class AuthorLink {
 	}
 	
 	// print linked authors
-	public int PrintLinkedAuth() {
+	public String PrintLinkedAuth() {
+		String retStr = "";
 		for(Map.Entry<String,Integer> entry : authLinked.entrySet()) {
 			String key = entry.getKey();
 			int value = entry.getValue();
 			if ( value > 0 )
-				System.out.print(key + " => " + value + " ");
+				//System.out.print(key + " - " + value + " ");
+				retStr += " " + key + " - " + value + " ";
 		}
-		return 0;
+		return retStr;
 	}
 }
