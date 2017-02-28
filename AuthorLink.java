@@ -15,6 +15,10 @@ public class AuthorLink {
 		authLinked = new HashMap<String,Integer>();
 	}
 	
+	public String getAuthor() {
+		return this.author;
+	}
+	
 	// add linked author
 	public int LinkAuthor(String linkauth, int distance) {
 		// check if already linked

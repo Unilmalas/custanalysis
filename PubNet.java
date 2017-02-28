@@ -213,7 +213,7 @@ public class PubNet {
 			String key = entry.getKey();
 			AuthorLink value = entry.getValue();
 			//System.out.println(key + " : " + value.PrintLinkedAuth());
-			System.out.println(value.author + " : " + value.PrintLinkedAuth());
+			System.out.println(value.getAuthor() + " : " + value.PrintLinkedAuth());
 		}
 		
 	}
