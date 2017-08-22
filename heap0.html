@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+array test length: <input type="number" name="tstarr" id="tstarr" value="10"><br>
+
+<button onclick="myfunc()">sort</button>
+
+<p id="demo0"></p>
+
+<p id="demo1"></p>
+
+<p id="demo2"></p>
+
+<script>
+
+var runct = 0;
+var swpct = 0;
+
+function moveto( arr, ifrom, ito ) {
+	arr.splice( ito, 0, arr[ifrom] );
+	if ( ito < ifrom )
+		arr.splice( ifrom + 1, 1 );
+	else
+		arr.splice( ifrom, 1 );
+}
+
+function swap( arr, i, j ) {
+	swpct++;
+	var temp = arr[i];
+	arr.splice( i, 1, arr[j] );
+	arr.splice( j, 1, temp );
+}
+
+function heapify0( arr, istart ) { // simple iterative O(n^2), just insertion...
+	if ( istart >= arr.length ) return;
+	runct++;
+    for (var i=istart; i<arr.length; i++ ) {
+        if ( arr[i] > arr[istart] )
+			swap( arr, i, istart );
+    }
+	heapify0( arr, istart+1 );
+}
+
+function heapify1( arr, istart, lvl ) { // heapify a binary tree
+	if ( istart >= arr.length ) return;
+	runct++;
+	// this is being processed 1, 2, 4, 8,... times
+	// the distance from root to leaf grows: from 2^(i+1-1)-2+1 to 2^(i+1)-2
+	// for each root two comparisons are required: one for each leave
+	// the distance from root to leaf grows with increasing tree depth	
+	var numleaves = Math.pow( 2, lvl );		// number of leaves at current level
+	var lvllen = numleaves - 1;				// places between root and leaves at current level
+	for ( i=0; i<numleaves; i++ ) {
+		if ( arr[istart + lvllen + 1] > arr[istart] ) {
+			swap( arr, istart + lvllen + 1, istart );
+		}
+		if ( arr[istart + lvllen + 2] > arr[istart] ) {
+			swap( arr, istart + lvllen + 2, istart );
+		}
+		istart++; // this is the current root
+		lvllen += 2; // these are the leaves for the current root
+	}
+	//lvl++;
+	heapify1( arr, istart, lvl ); // recursive call with increased level; istart should be at the next root
+}
+
+// from https://forum.kirupa.com/t/heapsort-implementation-in-javascript/633430/5
+function buildheap000( arr ) { // starting from the middle of the array build heap (going 2 cells in one step, so only from middle)
+    for (var i=~~(arr.length/2); i>=0; i-- ) {
+        heapify2( arr, arr.length, i );
+		//console.log("buildheap: " + i + " arr: " + arr);
+    }
+}
+
+function heapify2( arr, arrlen, i ) {
+    var left = 2*i + 1; // check 2 cells at once
+    var right = 2*i + 2;
+    var smallest = i;
+	runct++;
+	// check left and right cell 2*1+1 and +2 vs. smallest element
+    if (left < arrlen && arr[left] < arr[smallest])
+        smallest = left;
+    if (right < arrlen && arr[right] < arr[smallest])
+        smallest = right;
+    if ( smallest != i ) {
+        swap( arr, i, smallest ); 			// swap new smallest with input smallest (i)
+        heapify2( arr, arrlen, smallest ); 	// restore heap if swapped
+    }
+}
+
+function heapsort000( arr ) {
+    buildheap000( arr );
+	//console.log("heap2: " + arr);
+    for (var i=arr.length-1; i>0; i--) {
+        swap( arr, 0, i );		// revert array
+        heapify2( arr, i, 0 );	// restore heap
+    }
+}
+
+function heapify3( arr, len, istart ) { // heapify a binary tree
+	if ( len > arr.length || len < 0 ) return;
+	runct++;
+
+	var layer = ( len - 3 ) / 2;
+	var odd = false;
+	if ( layer % 2 > 0 ) odd = true;
+	layer = Math.ceil( layer );
+	if ( istart == 0 ) istart = layer;
+	
+	// will need to work backwards from the deepest leaf to the deepest root
+	for ( i=layer; i>=0; i-- ) {
+		//console.log("layer: " + layer + " arr: " + arr[istart + layer + 2] + " compare to " + arr[istart] + " at " + istart);
+		if ( odd && arr[istart + layer + 2] > arr[istart] ) {
+			swap( arr, istart + layer + 2, istart );
+		}
+		//console.log("layer: " + layer + " arr: " + arr[istart + layer + 1] + " compare to " + arr[istart] + " at " + istart);
+		if ( arr[istart + layer + 1] > arr[istart] ) {
+			swap( arr, istart + layer + 1, istart );
+		}
+		istart--;
+		layer--;
+		//return;
+	}
+	//heapify3( arr ); // recursive call with increased level; istart should be at the next root	
+}
+
+
+function heapsort001( arr ) {
+    for (var i=0; i<arr.length; i++) {
+        swap( arr, 0, i );		// revert array
+        heapify3( arr, i, 0 );	// restore heap
+    }
+}
+
+
+function myfunc() {
+    var arrlen = document.getElementById("tstarr").value;
+	//var temparr = inplist.split(",");
+	var inparr = [];
+	for ( var i=0; i<arrlen; i++ ) {
+		//inparr[i] = parseInt(temparr[i]);
+		inparr[i] = Math.floor(Math.random() * 100);
+	}
+	
+	var t0 = performance.now();
+	heapify0( inparr, 0, 0 );
+	var t1 = performance.now();
+    document.getElementById("demo0").innerHTML = inparr.toString();
+	console.log("runcount regular iterative: " + runct + " swaps: " + swpct);
+	console.log("Call to heapify0 took " + (t1 - t0) + " milliseconds.");
+	runct=0;
+	swpct=0;
+	for ( var i=0; i<arrlen; i++ ) {
+		//inparr[i] = parseInt(temparr[i]);
+		inparr[i] = Math.floor(Math.random() * 100);
+	}
+	t0 = performance.now();
+	heapsort001( inparr, inparr.length, 0 );
+	t1 = performance.now();
+    document.getElementById("demo1").innerHTML = inparr.toString();
+	console.log("runcount streamlined iterative: " + runct + " swaps: " + swpct);
+	console.log("Call to heapify3 took " + (t1 - t0) + " milliseconds.");
+	runct=0;
+	swpct=0;
+	for ( var i=0; i<arrlen; i++ ) {
+		//inparr[i] = parseInt(temparr[i]);
+		inparr[i] = Math.floor(Math.random() * 100);
+	}
+	t0 = performance.now();
+	heapsort000( inparr );
+	t1 = performance.now();
+    document.getElementById("demo2").innerHTML = inparr.toString();
+	console.log("runcount buildheap iterative: " + runct + " swaps: " + swpct);
+	console.log("Call to heapify2 took " + (t1 - t0) + " milliseconds.");
+}
+</script>
+
+</body>
+</html>

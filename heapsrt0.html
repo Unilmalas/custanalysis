@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+List of values: <input type="text" name="fname" id="inputList" value="1,15,6,3,33,-12,24"><br>
+
+<button onclick="myfunc()">sort</button>
+
+<p id="demo"></p>
+
+<script>
+function moveto( arr, ifrom, ito ) {
+	arr.splice( ito, 0, arr[ifrom] );
+	if ( ito < ifrom )
+		arr.splice( ifrom + 1, 1 );
+	else
+		arr.splice( ifrom, 1 );
+}
+
+function swap( arr, i, j ) {
+	var temp = arr[i];
+	arr.splice( i, 1, arr[j] );
+	arr.splice( j, 1, temp );
+}
+
+function partition( arr, lo, hi ) { // Partitioning: reorder the array so that all elements with values less than the pivot come before the pivot
+    var pivot = parseInt(arr[lo]); // Pick an element, called a pivot, from the array
+    var i = lo - 1;
+    var j = hi + 1;
+    do {
+        do {
+            i++;
+        } while ( arr[i] < pivot );
+        do {
+            j--;
+        } while ( arr[j] > pivot );
+        if ( i >= j )
+            return j;
+        swap( arr, i, j );
+	} while (true);
+}
+
+// quick sort: best: nlogn average nlogn worst: n^2
+function quksrt( arr, lo, hi ) {
+    if ( lo < hi ) {
+        var p = partition( arr, lo, hi );
+        quksrt( arr, lo, p );
+        quksrt( arr, p+1, hi );
+	}
+}
+
+/*
+//  root
+//  |   \
+//  |	 \
+//  |     \
+// lchld  rchld
+function leafSearch( arr, i, end ) {
+    var j = i;
+    while ( iLeftChild(j) <= end ) {
+        // Determine which of j's children is the greater
+        if ( iRightChild(j) <= end && arr[iRightChild(j)] > arr[iLeftChild(j)] )
+            j = iRightChild(j);
+        else
+            j = iLeftChild(j);
+	}
+    return j;
+}
+
+function siftDown( arr, i, end ) {
+    var j = leafSearch( arr, i, end );
+    while ( arr[i] > arr[j] )
+        j = iParent(j);
+    var k = j;
+    while ( j > i ) {
+        j = iParent(j);
+        swap ( arr, k, j );
+	}
+}*/
+
+function buildheap( arr ) { // starting from the middle of the array build heap
+    for (var i=~~(arr.length/2); i>=0; i-- ) {
+        heapify( arr, arr.length, i );
+		//console.log("buildheap: " + i + " arr: " + arr);
+    }
+}
+
+function heapify( arr, arrlen, i ) {
+    var left = 2*i + 1; // check 2 cells at once
+    var right = 2*i + 2;
+    var largest = i;
+	// check left and right cell 2*1+1 and +2 vs. largest element
+    if (left < arrlen && arr[left] > arr[largest])
+        largest = left;
+    if (right < arrlen && arr[right] > arr[largest])
+        largest = right;
+    if ( largest != i ) {
+        swap( arr, i, largest ); 			// swap new largest with input largest (i)
+        heapify( arr, arrlen, largest ); 	// restore heap if swapped
+    }
+}
+
+function heapsort( arr ) {
+    buildheap( arr );
+	//console.log("heap: " + arr);
+    for (var i=arr.length-1; i>0; i--) {
+        swap( arr, 0, i );		// revert array
+        heapify( arr, i, 0 );	// restore heap
+    }
+}
+
+function myfunc() {
+    var inplist = document.getElementById("inputList").value;
+	var temparr = inplist.split(",");
+	var inparr = [];
+	for ( var i=0; i<temparr.length; i++ ) {
+		inparr[i] = parseInt(temparr[i]);
+	}
+	
+	//moveto( inparr, 2, 0 );
+	//swap( inparr, 0, 2 );
+	
+	//document.getElementById("demo").innerHTML = inparr.toString();
+	//quksrt( inparr, 0, inparr.length-1 );
+	//var d=new Date();
+	//var n = d.getTime();
+	heapsort( inparr );
+	//var n2 = d.getTime();
+	//console.log(n2-n);
+	//heapify( inparr, parr, inparr.length );
+    document.getElementById("demo").innerHTML = inparr.toString();
+}
+</script>
+
+</body>
+</html>

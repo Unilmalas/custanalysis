@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+List of values: <input type="text" name="fname" id="inputList" value="1,15,12,6,3"><br>
+
+<button onclick="myfunc()">quick sort</button>
+
+<p id="demo"></p>
+
+<script>
+function moveto( arr, ifrom, ito ) {
+	arr.splice( ito, 0, arr[ifrom] );
+	if ( ito < ifrom )
+		arr.splice( ifrom + 1, 1 );
+	else
+		arr.splice( ifrom, 1 );
+}
+
+function swap( arr, i, j ) {
+	var temp = arr[i];
+	arr.splice( i, 1, arr[j] );
+	arr.splice( j, 1, temp );
+}
+
+function partition( arr, lo, hi ) { // Partitioning: reorder the array so that all elements with values less than the pivot come before the pivot
+    var pivot = parseInt(arr[lo]); // Pick an element, called a pivot, from the array
+    var i = lo - 1;
+    var j = hi + 1;
+    do {
+        do {
+            i++;
+        } while ( parseInt(arr[i]) < pivot );
+        do {
+            j--;
+        } while ( parseInt(arr[j]) > pivot );
+        if ( i >= j )
+            return j;
+        swap( arr, i, j );
+	} while (true);
+}
+
+// quick sort: best: nlogn average nlogn worst: n^2
+function quksrt( arr, lo, hi ) {
+    if ( lo < hi ) {
+        var p = partition( arr, lo, hi );
+        quksrt( arr, lo, p );
+        quksrt( arr, p+1, hi );
+	}
+}
+
+procedure heapsort(a, count) is
+    input: an unordered array a of length count
+ 
+    (Build the heap in array a so that largest value is at the root)
+    heapify(a, count)
+
+    (The following loop maintains the invariants that a[0:end] is a heap and every element
+     beyond end is greater than everything before it (so a[end:count] is in sorted order))
+    end ← count - 1
+    while end > 0 do
+        (a[0] is the root and largest value. The swap moves it in front of the sorted elements.)
+        swap(a[end], a[0])
+        (the heap size is reduced by one)
+        end ← end - 1
+        (the swap ruined the heap property, so restore it)
+        siftDown(a, 0, end)
+
+(Put elements of 'a' in heap order, in-place)
+procedure heapify(a, count) is
+    (start is assigned the index in 'a' of the last parent node)
+    (the last element in a 0-based array is at index count-1; find the parent of that element)
+    start ← iParent(count-1)
+    
+    while start ≥ 0 do
+        (sift down the node at index 'start' to the proper place such that all nodes below
+         the start index are in heap order)
+        siftDown(a, start, count - 1)
+        (go to the next parent node)
+        start ← start - 1
+    (after sifting down the root all nodes/elements are in heap order)
+
+(Repair the heap whose root element is at index 'start', assuming the heaps rooted at its children are valid)
+procedure siftDown(a, start, end) is
+    root ← start
+
+    while iLeftChild(root) ≤ end do    (While the root has at least one child)
+        child ← iLeftChild(root)   (Left child of root)
+        swap ← root                (Keeps track of child to swap with)
+
+        if a[swap] < a[child]
+            swap ← child
+        (If there is a right child and that child is greater)
+        if child+1 ≤ end and a[swap] < a[child+1]
+            swap ← child + 1
+        if swap = root
+            (The root holds the largest element. Since we assume the heaps rooted at the
+             children are valid, this means that we are done.)
+            return
+        else
+            swap(a[root], a[swap])
+            root ← swap            (repeat to continue sifting down the child now)
+
+function leafSearch(a, i, end) is
+    j ← i
+    while iLeftChild(j) ≤ end do
+        (Determine which of j's children is the greater)
+        if iRightChild(j) ≤ end and a[iRightChild(j)] > a[iLeftChild(j)] then
+            j ← iRightChild(j)
+        else
+            j ← iLeftChild(j)
+    return j
+
+procedure siftDown(a, i, end) is
+    j ← leafSearch(a, i, end)
+    while a[i] > a[j] do
+        j ← iParent(j)
+    k ← j
+    while j > i do
+        j ← iParent(j)
+        swap a[k], a[j]
+			
+function myfunc() {
+    var inplist = document.getElementById("inputList").value;
+	var inparr = inplist.split(",");
+	
+	//moveto( inparr, 2, 0 );
+	//swap( inparr, 0, 2 );
+	
+	//document.getElementById("demo").innerHTML = inparr.toString();
+	quksrt( inparr, 0, inparr.length-1 );
+    document.getElementById("demo").innerHTML = inparr.toString();
+}
+</script>
+
+</body>
+</html>

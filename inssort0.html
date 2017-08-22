@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+List of values: <input type="text" name="fname" id="inputList" value="1,15,12,6"><br>
+
+<button onclick="insSort()">insertion sort</button>
+
+<p id="demo"></p>
+
+<script>
+// insertion sort: best: n average n^2 worst: n^2
+function insSort() {
+    var inplist = document.getElementById("inputList").value;
+	var inparr = inplist.split(",");
+	var swapval = 0;
+
+    for (var i = 0; i < (inparr.length-1); i++) {
+		for (var j = i+1; j < inparr.length; j++) {
+			if ( parseInt(inparr[j]) < parseInt(inparr[i]) ) {
+				// swap values
+				swapval = inparr[i];
+				inparr[i] = inparr[j];
+				inparr[j] = swapval;
+			}
+		}
+    }
+    document.getElementById("demo").innerHTML = inparr.toString();
+}
+</script>
+
+</body>
+</html>

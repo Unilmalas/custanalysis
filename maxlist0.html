@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<form id="frm1" action="/action_page.php">
+  List of values: <input type="text" name="fname" id="inputList" value="1,15,12,6"><br>
+</form>
+
+<button onclick="myFunction()">Find highest value</button>
+
+<p id="demo"></p>
+
+<script>
+function myFunction() {
+    var inplist = document.getElementById("inputList").value;
+	var inparr = inplist.split(",");
+	var maxval = 0;
+    for (i = 0; i < inparr.length; i++) {
+        var currval = parseInt(inparr[i]);
+		if ( currval > maxval ) maxval = currval;
+    }
+    document.getElementById("demo").innerHTML = maxval;
+}
+</script>
+
+</body>
+</html>
