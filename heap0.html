@@ -76,16 +76,16 @@ function buildheap000( arr ) { // starting from the middle of the array build he
 function heapify2( arr, arrlen, i ) {
     var left = 2*i + 1; // check 2 cells at once
     var right = 2*i + 2;
-    var smallest = i;
+    var largest = i;
 	runct++;
-	// check left and right cell 2*1+1 and +2 vs. smallest element
-    if (left < arrlen && arr[left] < arr[smallest])
-        smallest = left;
-    if (right < arrlen && arr[right] < arr[smallest])
-        smallest = right;
-    if ( smallest != i ) {
-        swap( arr, i, smallest ); 			// swap new smallest with input smallest (i)
-        heapify2( arr, arrlen, smallest ); 	// restore heap if swapped
+	// check left and right cell 2*1+1 and +2 vs. largest element
+    if (left < arrlen && arr[left] > arr[largest])
+        largest = left;
+    if (right < arrlen && arr[right] > arr[largest])
+        largest = right;
+    if ( largest != i ) {
+        swap( arr, i, largest ); 			// swap new largest with input largest (i)
+        heapify2( arr, arrlen, largest ); 	// restore heap if swapped
     }
 }
 
@@ -102,31 +102,33 @@ function heapify3( arr, len, istart ) { // heapify a binary tree
 	if ( len > arr.length || len < 0 ) return;
 	runct++;
 
-	var layer = ( len - 3 ) / 2;
+	var layer = ( len - 3 ) / 2; // from 0 to depth that covers array length
 	var odd = false;
 	if ( layer % 2 > 0 ) odd = true;
 	layer = Math.ceil( layer );
 	if ( istart == 0 ) istart = layer;
+	//console.log("layer: " + layer + " istart: " + istart);
 	
 	// will need to work backwards from the deepest leaf to the deepest root
 	for ( i=layer; i>=0; i-- ) {
 		//console.log("layer: " + layer + " arr: " + arr[istart + layer + 2] + " compare to " + arr[istart] + " at " + istart);
-		if ( odd && arr[istart + layer + 2] > arr[istart] ) {
+		if ( !odd && arr[istart + layer + 2] > arr[istart] ) {
 			swap( arr, istart + layer + 2, istart );
 		}
 		//console.log("layer: " + layer + " arr: " + arr[istart + layer + 1] + " compare to " + arr[istart] + " at " + istart);
 		if ( arr[istart + layer + 1] > arr[istart] ) {
 			swap( arr, istart + layer + 1, istart );
+			odd = false;
 		}
 		istart--;
 		layer--;
 		//return;
 	}
-	//heapify3( arr ); // recursive call with increased level; istart should be at the next root	
+	//heapify3( arr, len, istart ); // recursive call with increased level; istart should be at the next root	
 }
 
 
-function heapsort001( arr ) {
+function buildheap001( arr ) {
     for (var i=0; i<arr.length; i++) {
         swap( arr, 0, i );		// revert array
         heapify3( arr, i, 0 );	// restore heap
@@ -156,7 +158,7 @@ function myfunc() {
 		inparr[i] = Math.floor(Math.random() * 100);
 	}
 	t0 = performance.now();
-	heapsort001( inparr, inparr.length, 0 );
+	heapify3( inparr, inparr.length, 0 );
 	t1 = performance.now();
     document.getElementById("demo1").innerHTML = inparr.toString();
 	console.log("runcount streamlined iterative: " + runct + " swaps: " + swpct);
@@ -168,7 +170,7 @@ function myfunc() {
 		inparr[i] = Math.floor(Math.random() * 100);
 	}
 	t0 = performance.now();
-	heapsort000( inparr );
+	buildheap000( inparr );
 	t1 = performance.now();
     document.getElementById("demo2").innerHTML = inparr.toString();
 	console.log("runcount buildheap iterative: " + runct + " swaps: " + swpct);
