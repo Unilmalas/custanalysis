@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+array test length: <input type="text" name="tstarr" id="tstarr" value="5, 3, 8, 0, 12"><br>
+
+<button onclick="myfunc()">mst</button>
+
+<p id="demo0"></p>
+
+<script>
+
+// https://www.hackerearth.com/practice/algorithms/
+// mst algorithm
+
+function randInt( maxN ) {
+	return ~~( Math.random() * maxN );     // returns a number between 0 and maxN-1
+}
+
+function moveto( arr, ifrom, ito ) {
+	arr.splice( ito, 0, arr[ifrom] );
+	if ( ito < ifrom )
+		arr.splice( ifrom + 1, 1 );
+	else
+		arr.splice( ifrom, 1 );
+}
+
+function swap( arr, i, j ) {
+	var temp = arr[i];
+	arr.splice( i, 1, arr[j] );
+	arr.splice( j, 1, temp );
+}
+
+// disjoint set datastructure
+
+var sets = [];
+
+function set( val, parent, rank ) {
+	this.val = val;
+	this.parent = parent;
+	this.rank = rank;
+}
+
+// todo: implement a more efficient storage where the parents are indicated by their array indices:
+// index:	0  1  2  3  4
+// array:	0  3        5
+//			1  4        6
+//			2           7
+var indexarr = [];
+var setarr = [];
+
+function makeset( x ) { // create a singleton; x is a single value
+	if ( !sets.find( function ( findval ) { // if x not in set
+		return findval.val == x;
+	}) ) {
+		var newset = new set( x, x, 0 );
+		sets.push( newset ); // add x to DST
+	}
+}
+
+function makeseti( x ) { // create a singleton - index array version; x is a single value
+	if ( !indexarr.find( function ( findval, indx, arr ) { // if x not in set
+		//console.log("makeseti arr len: " + arr[indx].length);
+		for ( var i=0; i<arr[indx].length; i++ ) { // a depth-search would not be required if we assume just singletons initially
+			//console.log("makeseti: " + findval[i] + " of " + typeof findval);
+			return findval.find( function ( findinner ) { return findinner == x; }); // need to search again through column-arrays of indexarr
+		}
+	}) ) {
+		setarr = [];
+		setarr[0] = x;
+		indexarr.push( setarr ); // add x to DST
+	}
+}
+
+function findroot( x ) { // find root of element x; x is a set
+	console.log("findroot: " + x.val);
+	if ( typeof x.parent !== 'undefined' && x.parent != x ) { // root elements have themselves as their parents
+		x.parent = findroot( x.parent );
+	}
+	return x.parent;
+}
+
+function union( x, y ) { // join two sets x, y by union
+	xroot = findroot ( x );
+	yroot = findroot ( y );
+	if ( xroot === yroot ) return;
+	if ( xroot.rank < yroot.rank )
+		xroot.parent = yroot;
+	else if ( xroot.rank > yroot.rank )
+		yroot.parent = xroot;
+	else {
+		yroot.parent = xroot;
+		xroot.rank = xroot.rank + 1;
+	}
+}
+
+function setarrtst() {
+	// test set in array storage
+	setarr[0] = 0;
+	setarr[1] = 1;
+	setarr[2] = 2;
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	setarr[0] = 3;
+	setarr[1] = 4;
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	setarr[0] = 5;
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	setarr[0] = 6;
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	indexarr.push( setarr );
+	console.log( JSON.stringify(indexarr) );
+	//makeseti(5);
+	//console.log( JSON.stringify(indexarr) );
+}
+
+function setarrtst1() { // atomic tree
+	// test set in array storage
+	setarr[0] = 0;
+	setarr[1] = 1;
+	setarr[2] = 2;
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	indexarr.push( setarr );
+	console.log( JSON.stringify(indexarr) );
+	//makeseti(5);
+	//console.log( JSON.stringify(indexarr) );
+}
+
+function setarrtst2() { // atomic tree
+	// test set in array storage
+	setarr[0] = 0;
+	setarr[1] = 1;
+	setarr[2] = 2;
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	setarr[0] = 3;
+	setarr[1] = 4;
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	indexarr.push( setarr );
+	console.log( JSON.stringify(indexarr) );
+	//makeseti(5);
+	//console.log( JSON.stringify(indexarr) );
+}
+
+function setarrtst3() { // atomic tree
+	// test set in array storage
+	setarr[0] = 0;
+	setarr[1] = 1;
+	setarr[2] = 2;
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	setarr[0] = 3;
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	setarr[0] = 4;
+	setarr[1] = 5;
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	indexarr.push( setarr );
+	setarr = []; // empty array
+	indexarr.push( setarr );
+	console.log( JSON.stringify(indexarr) );
+	//makeseti(5);
+	//console.log( JSON.stringify(indexarr) );
+}
+
+function hasChildren(nodeindex) { // returns an array of child indices
+	if ( indexarr[nodeindex].length > 0 )
+		return indexarr[nodeindex];
+	else
+		return [];
+}
+
+// rank storage
+var rankarr = [];
+var childarr = [];
+
+function getRanks(nodeindex, crank) { // fills the array of ranks rankarr based on the tree stored in indexarr
+// starting from a node go to each of its children and follow them while increasing and storing ranks
+	var children = [];
+	children = children.concat(hasChildren(nodeindex)); // get children of current node
+	if ( children.length === 0 ) { // no more children? set rank and go back up tree
+		if ( typeof rankarr[nodeindex] === 'undefined' ) rankarr.push(crank); // add current rank to rank array (push or set)
+		else rankarr[nodeindex] = crank;
+		return;
+	}
+	var childindex = 0;
+	while ( childindex < children.length ) { // process all children
+		if ( children[childindex] === nodeindex ) { // root node if first child === node index
+			rankarr[nodeindex] = 0; // root is always 0
+		} else { // for non-root children: follow each child
+			if ( typeof rankarr[nodeindex] === 'undefined' ) rankarr.push(crank); // add current rank to rank array (push or set)
+			else rankarr[nodeindex] = crank;
+			getRanks( children[childindex], crank+1 ); // go to children node in node array
+		}
+		childindex++;
+	}
+}
+
+function myfunc() {
+    var inplist = document.getElementById("tstarr").value;
+	var temparr = inplist.split(",");
+	var intarr = [];
+	for ( var i=0; i<temparr.length; i++ )
+		intarr[i] = parseInt(temparr[i]);
+	//console.log( greedy0( temparr, 20 ));
+	makeset( 0 );
+	makeset( 1 );
+	makeset( 2 );
+	makeset( 3 );
+	sets[1].parent = sets[0];
+	sets[2].parent = sets[0];
+	sets[0].parent = sets[0];
+	//union( sets[0], sets[1] );
+	//document.getElementById("demo0").innerHTML = greedy0( intarr, 10 );
+	//document.getElementById("demo0").innerHTML = JSON.stringify(sets);
+	//console.log( JSON.stringify(sets[0]) );
+	//console.log("root: " + findroot( sets[2] ).val);
+	//console.log( checkcycle( graph ) );
+	//setarrtst();
+	//rankstoretst1( 0, 1 );
+	//console.log( JSON.stringify(rankarr) );
+	indexarr = [];
+	setarrtst1();
+	rankarr = [];
+	//rankstoretst1( 0, 1 );
+	getRanks( 0, 0 );
+	console.log("myfunc: " + JSON.stringify(rankarr) );
+	indexarr = [];
+	setarrtst2();
+	rankarr = [];
+	//rankstoretst1( 0, 1 );
+	getRanks( 0, 0 );
+	console.log("myfunc: " + JSON.stringify(rankarr) );
+	indexarr = [];
+	setarrtst3();
+	rankarr = [];
+	//rankstoretst1( 0, 1 );
+	getRanks( 0, 0 );
+	console.log("myfunc: " + JSON.stringify(rankarr) );
+	//console.log("children: " + JSON.stringify( hasChildren(0) ) );
+}
+
+</script>
+
+</body>
+</html>
