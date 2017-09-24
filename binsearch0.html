@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+array test length: <input type="number" name="tstarr" id="tstarr" value="5"><br>
+
+<button onclick="myfunc()">sort</button>
+
+<p id="demo0"></p>
+
+<script>
+
+var runct = 0;
+var swpct = 0;
+
+function moveto( arr, ifrom, ito ) {
+	arr.splice( ito, 0, arr[ifrom] );
+	if ( ito < ifrom )
+		arr.splice( ifrom + 1, 1 );
+	else
+		arr.splice( ifrom, 1 );
+}
+
+function swap( arr, i, j ) {
+	swpct++;
+	var temp = arr[i];
+	arr.splice( i, 1, arr[j] );
+	arr.splice( j, 1, temp );
+}
+
+function partition( arr, lo, hi ) { // Partitioning: reorder the array so that all elements with values less than the pivot come before the pivot
+    var pivot = parseInt(arr[lo]); // Pick an element, called a pivot, from the array
+    var i = lo - 1;
+    var j = hi + 1;
+    do {
+        do {
+            i++;
+        } while ( parseInt(arr[i]) < pivot );
+        do {
+            j--;
+        } while ( parseInt(arr[j]) > pivot );
+        if ( i >= j )
+            return j;
+        swap( arr, i, j );
+	} while (true);
+}
+
+// quick sort: best: nlogn average nlogn worst: n^2
+function quksrt( arr, lo, hi ) {
+    if ( lo < hi ) {
+        var p = partition( arr, lo, hi );
+        quksrt( arr, lo, p );
+        quksrt( arr, p+1, hi );
+	}
+}
+
+function heapify0( arr, istart ) { // simple iterative O(n^2), just insertion...
+	if ( istart >= arr.length ) return;
+	runct++;
+    for (var i=istart; i<arr.length; i++ ) {
+        if ( arr[i] > arr[istart] )
+			swap( arr, i, istart );
+    }
+	heapify0( arr, istart+1 );
+}
+
+// modified from https://forum.kirupa.com/t/heapsort-implementation-in-javascript/633430/5
+function buildheap( arr ) { // build heap - just need to work through the roots which go from 0 to arr.length/2, the rest are leaves
+    for (var i=~~(arr.length/2); i>=0; i-- ) {
+        heapify2( arr, arr.length, i );
+		//console.log("buildheap: " + i + " arr: " + arr);
+    }
+}
+
+// heap structure:
+// root - left - right
+// x    - root - x     - left - right
+// x    - x    - root  - x    - x     - left - right
+// this does not build a full heap, just goes deep if a leaf is swapped to root
+function heapify2( arr, arrlen, i ) {
+    var left = 2*i + 1; // see above for memory structure of heap
+    var right = 2*i + 2;
+    var root = i;
+	runct++;
+	//console.log(arr);
+	// check left and right cell 2*1+1 and +2 vs. root (largest) element
+    if (left < arrlen && arr[left] < arr[root])
+        root = left;
+    if (right < arrlen && arr[right] < arr[root])
+        root = right;
+    if ( root != i ) {
+        swap( arr, i, root ); 			// swap new root with input root (i)
+        heapify2( arr, arrlen, root ); 	// restore heap if swapped starting with new root element
+    }
+}
+
+function heapsort( arr ) {
+    buildheap( arr );
+	//console.log("heap2: " + arr);
+    for (var i=arr.length-1; i>0; i--) {
+        swap( arr, 0, i );		// revert array
+        heapify2( arr, i, 0 );	// restore heap up to current length of array with root = 0
+    }
+}
+
+function binsrch( arr, fr, to, val ) { // binary search of integer val in integer array arr (from-to, assumed to be sorted in asc.)
+	if ( to > arr.length ) return -1;
+	var len = to - fr;
+	if ( len <= 1 ) return fr; // returns index of array element closest to the value searched (to contains next upper index)
+	console.log("val: " + val + " fr: " + fr + " to: " + to + " arr: " + arr[fr + ~~(len/2)]);
+	if ( val > arr[fr + ~~(len/2)] )
+		return binsrch( arr, fr + ~~(len/2), to, val );
+	else
+		return binsrch( arr, fr, to - ~~(len/2), val );
+}
+
+function myfunc() {
+    var arrlen = document.getElementById("tstarr").value;
+	//var temparr = inplist.split(",");
+	var inparr = [];
+	for ( var i=0; i<arrlen; i++ ) {
+		//inparr[i] = parseInt(temparr[i]);
+		inparr[i] = Math.floor(Math.random() * 100);
+	}
+	
+	runct=0;
+	swpct=0;
+	for ( var i=0; i<arrlen; i++ ) {
+		//inparr[i] = parseInt(temparr[i]);
+		inparr[i] = Math.floor(Math.random() * 100);
+	}
+	t0 = performance.now();
+	quksrt( inparr, 0, inparr.length-1 );
+	console.log(binsrch( inparr, 0, inparr.length, 60 ));
+	t1 = performance.now();
+    document.getElementById("demo0").innerHTML = inparr.toString();
+	console.log("runcount buildheap iterative: " + runct + " swaps: " + swpct);
+	console.log("Call to heapify2/buildheap took " + (t1 - t0) + " milliseconds.");
+}
+</script>
+
+</body>
+</html>
