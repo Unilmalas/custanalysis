@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+array test length: <input type="text" name="tstarr" id="tststr" value="abaaba"><br>
+
+<button onclick="myfunc()">Z-funtion</button>
+
+<button onclick="csvDownload()">CSV-Download</button>
+
+<p id="demo0"></p>
+
+<p id="demo1"></p>
+
+<script>
+
+// Z algorithm
+
+function randInt( maxN ) {
+	return ~~( Math.random() * maxN );     // returns a number between 0 and maxN-1
+}
+
+function moveto( arr, ifrom, ito ) {
+	arr.splice( ito, 0, arr[ifrom] );
+	if ( ito < ifrom )
+		arr.splice( ifrom + 1, 1 );
+	else
+		arr.splice( ifrom, 1 );
+}
+
+function swap( arr, i, j ) {
+	var temp = arr[i];
+	arr.splice( i, 1, arr[j] );
+	arr.splice( j, 1, temp );
+}
+
+// Z-Algorithm naive
+function zfunc0( p ) { // z(i) is the length of the largest subset of p that starts at i>=0 and matches a prefix of p
+	var zret = [];
+	var prefix = '';
+	for ( var i=1; i<p.length; i++ ) {
+		var match = true;
+		var preflen = 0;
+		while ( match && preflen < p.length ) {
+			if ( p.charAt(i+preflen) === p.charAt(preflen) ) match = true;
+			else match = false;
+			preflen++;
+		}
+		zret.push(preflen-1);
+	}
+	return zret;
+}
+
+// Z-Algorithm with interval L-R
+function zfunc1( s ) { 		// z(i) is the length of the largest subset of s that starts at i>=0 and matches a prefix of p
+	var z = []; 			// return array
+	var n=s.length;
+	var L=0, R=0; 			// interval storage
+	for ( var i=1; i<n; i++ ) {
+		if ( i > R ) { 		// case 0: i is out of the L-R substring, so no prefix substring exists starting before i and anding after i
+			R = i; 			// reset interval
+			L = R;
+			while ( R<n && s[R-L]==s[R] ) R++; // compare substring in interval s[R-L] with prefix s[R]: extend R
+			//z[i]=R-L;
+			z.push(R-L); 	// add current substring length to return array
+			//console.log("i>R " + L + " R " + R);
+			R--; 			// annul last increment from while()
+		} else { 			// case 1: current substring extends at least to i, which splits L-R to L-i-R, two cases:
+			var k = i-L-1;	// was i-L, zhis caused wrong results with 0-match
+			if ( z[k] < R-i+1 ) {	// case 1.0: no larger prefix substring, add to return array
+				//z[i] = z[k];
+				//console.log("i<=R z[k]<R-i+1 " + L + " R " + R + " z[k] " + z[k] + " for k " + k);
+				z.push(z[k]);
+			} else {			// case 1.1: right side of L-i-R, now the prefix substring might be longer and extend beyond R
+				L=i;
+				while ( R<n && s[R-L]==s[R] ) R++; // compare substring in interval s[R-L] with prefix s[R]: extend R
+				//z[i]=R-L;
+				z.push(R-L); // add current substring length to return array
+				//console.log("i<=R z[k]>R-i+1 " + L + " R " + R);
+				R--; 		// annul last increment from while()
+			}
+		}
+	}
+	return z;
+}
+
+function csvDownload() {
+	var data = [["name1", "city1", "some other info"], ["name2", "city2", "more info"]];
+	var csvContent = "data:text/csv;charset=utf-8,";
+	data.forEach(function(infoArray, index){
+		dataString = infoArray.join(",");
+		csvContent += index < data.length ? dataString+ "\n" : dataString;
+	});
+	
+	var encodedUri = encodeURI(csvContent);
+	window.open(encodedUri);
+}
+
+function myfunc() {
+    var inpstr = document.getElementById("tststr").value;
+	document.getElementById("demo0").innerHTML = zfunc0( inpstr);
+	document.getElementById("demo1").innerHTML = zfunc1( inpstr);
+}
+
+</script>
+
+</body>
+</html>
