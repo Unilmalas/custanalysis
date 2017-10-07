@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<p>Monty Hall 3-Door Problem</p>
+
+<button onclick="montytest()">test Monty</button>
+
+<p id="demo0"></p>
+
+<script>
+
+function randInt( maxN ) {
+	return ~~( Math.random() * maxN );     // returns a number between 0 and maxN-1
+}
+
+function nthRoot(n, Arg, prec) {
+  var x = 1; // Initial guess.
+  for (var i=0; i<prec; i++) {
+    x += 1/n * (Arg / Math.pow( x, n-1 ) - x);
+  }
+  return x;
+}
+
+function montyProblem( choice, switchYN ) {
+	// player chooses choice, announces, Monty opens not car door and not player door , switch or not
+	var doors = [0, 1, 2]; // door options
+	// place car (for now always on A=0, player chooses randomly)
+	var carDoor = 0; // 0=A, 1=B, 2=C
+	// Monty opens one of the doors without the car
+	doors.splice( carDoor, 1 ); // remove car door from the options for Monty
+	// Player announces his choice first so also remove that door from Montys options
+	doors.splice( choice, 1 );
+	var montyDoor = doors[randInt( doors.length )]; // Monty has just 1 (if player was initially wrong) or 2 (player was initially right) options left
+	montyDoor = doors[0];
+	if ( switchYN ) { // player switches == yes
+		// not Montys door and not original players choice door
+		doors = [0, 1, 2];
+		doors.splice( montyDoor, 1 ); // remove Montys door from options for player
+		doors.splice( choice, 1 ); // remove choice from options for player
+		var finalDoor = doors[randInt( doors.length )]; // 2 options (player originally right) or 1 option (player originally wrong) left
+		finalDoor = doors[0];
+	} else {
+		// stay with original choice
+		var finalDoor = choice;
+	}
+	if ( finalDoor === carDoor ) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+function montytest() {
+	var okctr = 0.0;
+	//document.getElementById("demo0").innerHTML = nthRoot( 2, 64, 20 );
+	for ( var i=0; i<1000; i++ )
+		okctr += montyProblem( randInt( 3 ), true );
+	document.getElementById("demo0").innerHTML = "p_win = " + okctr / 1000;
+}
+
+</script>
+
+</body>
+</html>
