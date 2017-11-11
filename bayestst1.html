@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>JavaScript Bayesian Classification of Texts Test</h2>
+
+<p>xxxxxxxxxxxxxxx</p>
+
+<button onclick="myFunction()">Try it</button>
+
+<p id="demo0"></p>
+
+<p id="demo1"></p>
+
+<script>
+'use strict';
+
+/* Terminology
+ * label: refers to class as in classification, since `class` is a reserved word.
+ * doc: refers to document, since `document` is a reserved word.
+ * feature: a token (word) in the bag of words (document). */
+
+/*Include Porter Stemmer algorithm
+ * https://github.com/miguelmota/bayes-classifier/blob/master/lib/stemmers/porter.js
+ */
+/*
+ * @credit: https://github.com/NaturalNode/natural/blob/master/lib/natural/stemmers/porter_stemmer.js
+ */
+
+/*
+  Copyright (c) 2011, Chris Umbel
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.
+*/
+
+// Denote groups of consecutive consonants with a C and consecutive vowels
+// with a V.
+function categorizeGroups(token) {
+  return token.replace(/[^aeiou]+/g, 'C').replace(/[aeiouy]+/g, 'V');
+}
+
+// Denote single consonants with a C and single vowels with a V
+function categorizeChars(token) {
+  return token.replace(/[^aeiou]/g, 'C').replace(/[aeiouy]/g, 'V');
+}
+
+// Calculate the "measure" M of a word. M is the count of VC sequences dropping
+// an initial C if it exists and a trailing V if it exists.
+function measure(token) {
+  if(!token)
+    return -1;
+
+  return categorizeGroups(token).replace(/^C/, '').replace(/V$/, '').length / 2;
+}
+
+// Determine if a token end with a double consonant i.e. happ
+function endsWithDoublCons(token) {
+  return token.match(/([^aeiou])\1$/);
+}
+
+// Replace a pattern in a word. if a replacement occurs an optional callback
+// can be called to post-process the result. if no match is made NULL is
+// returned.
+function attemptReplace(token, pattern, replacement, callback) {
+  var result = null;
+
+  if((typeof pattern == 'string') && token.substr(0 - pattern.length) == pattern)
+    result = token.replace(new RegExp(pattern + '$'), replacement);
+  else if((pattern instanceof RegExp) && token.match(pattern))
+    result = token.replace(pattern, replacement);
+
+  if(result && callback)
+    return callback(result);
+  else
+    return result;
+}
+
+// Attempt to replace a list of patterns/replacements on a token for a minimum
+// measure M.
+function attemptReplacePatterns(token, replacements, measureThreshold) {
+  var replacement = null;
+
+  for(var i = 0; i < replacements.length; i++) {
+    if(!measureThreshold || measure(attemptReplace(token, replacements[i][0], '')) > measureThreshold)
+      replacement = attemptReplace(token, replacements[i][0], replacements[i][1]);
+
+    if(replacement)
+      break;
+  }
+
+  return replacement;
+}
+
+// Replace a list of patterns/replacements on a word. if no match is made return
+// the original token.
+function replacePatterns(token, replacements, measureThreshold) {
+  var result = attemptReplacePatterns(token, replacements, measureThreshold);
+  token = !result ? token : result;
+  return token;
+}
+
+// Step 1a as defined for the porter stemmer algorithm.
+function step1a(token) {
+  if(token.match(/(ss|i)es$/))
+    return token.replace(/(ss|i)es$/, '$1');
+
+  if(token.substr(-1) == 's' && token.substr(-2, 1) != 's' && token.length > 3)
+    return token.replace(/s?$/, '');
+
+  return token;
+}
+
+// Step 1b as defined for the porter stemmer algorithm.
+function step1b(token) {
+  if(token.substr(-3) == 'eed') {
+    if(measure(token.substr(0, token.length - 3)) > 0)
+      return token.replace(/eed$/, 'ee');
+  } else {
+    var result = attemptReplace(token, /ed|ing$/, '', function(token) {
+      if(categorizeGroups(token).indexOf('V') >= 0) {
+        var result = attemptReplacePatterns(token, [['at', 'ate'],  ['bl', 'ble'], ['iz', 'ize']]);
+        if(result)
+          return result;
+        else {
+          if(endsWithDoublCons(token) && token.match(/[^lsz]$/))
+            return token.replace(/([^aeiou])\1$/, '$1');
+
+          if(measure(token) == 1 && categorizeChars(token).substr(-3) == 'CVC' && token.match(/[^wxy]$/))
+            return token + 'e';
+        }
+
+        return token;
+      }
+
+      return null;
+    });
+
+    if(result)
+      return result;
+  }
+
+  return token;
+}
+
+// Step 1c as defined for the porter stemmer algorithm.
+function step1c(token) {
+  if(categorizeGroups(token).substr(-2, 1) == 'V') {
+    if(token.substr(-1) == 'y')
+      return token.replace(/y$/, 'i');
+  }
+
+  return token;
+}
+
+// Step 2 as defined for the porter stemmer algorithm.
+function step2(token) {
+  return replacePatterns(token, [['ational', 'ate'], ['tional', 'tion'], ['enci', 'ence'], ['anci', 'ance'],
+    ['izer', 'ize'], ['abli', 'able'], ['alli', 'al'], ['entli', 'ent'], ['eli', 'e'],
+    ['ousli', 'ous'], ['ization', 'ize'], ['ation', 'ate'], ['ator', 'ate'],['alism', 'al'],
+    ['iveness', 'ive'], ['fulness', 'ful'], ['ousness', 'ous'], ['aliti', 'al'],
+  ['iviti', 'ive'], ['biliti', 'ble']], 0);
+}
+
+// Step 3 as defined for the porter stemmer algorithm.
+function step3(token) {
+  return replacePatterns(token, [['icate', 'ic'], ['ative', ''], ['alize', 'al'],
+  ['iciti', 'ic'], ['ical', 'ic'], ['ful', ''], ['ness', '']], 0);
+}
+
+// Step 4 as defined for the porter stemmer algorithm.
+function step4(token) {
+  return replacePatterns(token, [['al', ''], ['ance', ''], ['ence', ''], ['er', ''],
+    ['ic', ''], ['able', ''], ['ible', ''], ['ant', ''],
+    ['ement', ''], ['ment', ''], ['ent', ''], [/([st])ion/, '$1'], ['ou', ''], ['ism', ''],
+    ['ate', ''], ['iti', ''], ['ous', ''], ['ive', ''],
+  ['ize', '']], 1);
+}
+
+// Step 5a as defined for the porter stemmer algorithm.
+function step5a(token) {
+  var m = measure(token);
+
+  if(token.length > 3 && ((m > 1 && token.substr(-1) == 'e') || (m == 1 && !(categorizeChars(token).substr(-4, 3) == 'CVC' && token.match(/[^wxy].$/)))))
+    return token.replace(/e$/, '');
+
+  return token;
+}
+
+// Step 5b as defined for the porter stemmer algorithm.
+function step5b(token) {
+  if(measure(token) > 1) {
+    if(endsWithDoublCons(token) && token.substr(-2) == 'll')
+      return token.replace(/ll$/, 'l');
+  }
+
+  return token;
+}
+
+var Tokenizer = function() {
+
+};
+
+// List of commonly used words that have little meaning to be excluded from analysis.
+Tokenizer.stopwords = [
+  'about', 'after', 'all', 'also', 'am', 'an', 'and', 'another', 'any', 'are', 'as', 'at', 'be',
+  'because', 'been', 'before', 'being', 'between', 'both', 'but', 'by', 'came', 'can',
+  'come', 'could', 'did', 'do', 'each', 'for', 'from', 'get', 'got', 'has', 'had',
+  'he', 'have', 'her', 'here', 'him', 'himself', 'his', 'how', 'if', 'in', 'into',
+  'is', 'it', 'like', 'make', 'many', 'me', 'might', 'more', 'most', 'much', 'must',
+  'my', 'never', 'now', 'of', 'on', 'only', 'or', 'other', 'our', 'out', 'over',
+  'said', 'same', 'see', 'should', 'since', 'some', 'still', 'such', 'take', 'than',
+  'that', 'the', 'their', 'them', 'then', 'there', 'these', 'they', 'this', 'those',
+  'through', 'to', 'too', 'under', 'up', 'very', 'was', 'way', 'we', 'well', 'were',
+  'what', 'where', 'which', 'while', 'who', 'with', 'would', 'you', 'your',
+  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+  'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '$', '1',
+  '2', '3', '4', '5', '6', '7', '8', '9', '0', '_'
+];
+
+Tokenizer.prototype.trim = function(array) {
+  while (array[array.length - 1] === '')
+    array.pop();
+
+  while (array[0] === '')
+    array.shift();
+
+  return array;
+};
+
+Tokenizer.prototype.tokenize = function(text) {
+  // Break a string up into an array of tokens by anything non-word
+  return this.trim(text.split(/\W+/));
+};
+
+var Stemmer = function() {
+
+};
+
+// perform full stemming algorithm on a single word
+Stemmer.prototype.stem = function(token) {
+  return step5b(step5a(step4(step3(step2(step1c(step1b(step1a(token.toLowerCase())))))))).toString();
+};
+
+Stemmer.prototype.addStopWord = function(stopWord) {
+  Tokenizer.stopwords.push(stopWord);
+};
+
+Stemmer.prototype.addStopWords = function(moreStopWords) {
+  Tokenizer.stopwords = Tokenizer.stopwords.concat(moreStopWords);
+};
+
+Stemmer.prototype.tokenizeAndStem = function(text, keepStops) {
+  var stemmedTokens = [];
+
+  new Tokenizer().tokenize(text).forEach(function(token) {
+    if(keepStops || Tokenizer.stopwords.indexOf(token) == -1)
+      stemmedTokens.push(this.stem(token));
+  }.bind(this));
+
+  return stemmedTokens;
+};
+
+var stemmer = new Stemmer();
+
+// from here much from M.Mota https://miguelmota.com/blog/naive-bayes-classifier-in-javascript/
+
+// BayesClassifier: Bayes classifier constructor
+function BayesClassifier() {
+  // Create a new instance when not using the `new` keyword.
+  if (!(this instanceof BayesClassifier)) {
+    return new BayesClassifier();
+  }
+
+  /* The stemmer provides tokenization methods.
+   * It breaks the doc into words (tokens) and takes the
+   * stem of each word. A stem is a form to which affixes
+   * can be attached, aka root word. */
+  this.stemmer = stemmer;
+
+   // A collection of added documents
+   // Each document is an object containing the class, and array of stemmed words.
+  this.docs = [];
+
+  //Index of last added document.
+  this.lastAdded = 0;
+
+   // A map of all class features.
+  this.features = {};
+  this.featuresTfidf = {}; // same map with tfidf-values
+
+  /* A map containing each class and associated features.
+   * Each class has a map containing a feature index and the count of feature appearances for that class. */
+  this.classFeatures = {};
+  this.classFeatTfidf = {};
+
+  // Keep track of how many features in each class.
+  this.classTotals = {};
+  this.classTotTfidf = {};
+
+  // Number of examples trained
+  this.totalExamples = 1;
+
+  /* Additive smoothing to eliminate zeros when summing features,
+   * in cases where no features are found in the document.
+   * Used as a fail-safe to always return a class.
+   * http://en.wikipedia.org/wiki/Additive_smoothing */
+  this.smoothing = 1;
+}
+
+BayesClassifier.prototype.addDocument = function(doc, label) { // add one document to class
+  if (!this._size(doc)) {
+    return;
+  }
+
+  if (this._isString(doc)) {
+    // Return array of stemmed words
+    doc = this.stemmer.tokenizeAndStem(doc);
+  }
+  
+  let rtf = [];
+  let maxrtf = 1;
+  // calculate raw term frequencies and max. doc raw frequency - a bit quick and dirty, improve later
+  doc.forEach(function (cval, index) {
+	for (var i=0; i<doc.length; i++) {
+		if( doc[i] === cval )
+			if( typeof rtf[i] === 'undefined') rtf.push(1)
+			else rtf[i]++;
+			if ( rtf[i] > maxrtf ) maxrtf = rtf[i];
+	}
+  });
+  
+  // Docs: {"label":"positive","value":["seem","help","patient"]}
+  var docObj = {
+    label: label, 	// a string
+    value: doc, 	// an array
+	rtf: rtf, 		// an array
+	maxrtf: maxrtf 	// used later for augmented frequency, a number
+  };
+
+  this.docs.push(docObj);
+  // Add token (feature) to features map
+  for (var i = 0; i < doc.length; i++) {
+    this.features[doc[i]] = 1;
+  }
+};
+
+BayesClassifier.prototype.addDocuments = function(docs, label) { // add many documents to class (input as array) under the label supplied
+  for (var i = 0; i < docs.length; i++) {
+    this.addDocument(docs[i], label);
+  }
+};
+
+// invDocFreq: return the inverse document frequency (see https://en.wikipedia.org/wiki/Tf%E2%80%93idf)
+BayesClassifier.prototype.invDocFreq = function(term) { // calculate the inverse document frequency for term
+  let docct = 0;
+  this.docs.forEach(function (cval, index) {
+	if ( cval.value.indexOf(term) > -1 ) docct++;
+  });
+  return this.docs.length / ( Math.log( docct ) + 1.0 );
+};
+
+// termFreq: return the augmented term frequency
+BayesClassifier.prototype.termFreq = function(term, doc) { // calculate the term frequency for term in doc
+	//console.log("termFreq: " + term + " in " + doc);
+	if ( typeof term !== 'undefined' && typeof doc !== 'undefined') {
+		let termIdx = doc.indexOf(term);
+		let rtf = [];
+		let maxrtf = 1;
+		// calculate raw term frequencies and max. doc raw frequency - a bit quick and dirty, improve later
+		doc.forEach(function (cval, index) {
+		for (var i=0; i<doc.length; i++) {
+			if( doc[i] === cval )
+				if( typeof rtf[i] === 'undefined') rtf.push(1)
+				else rtf[i]++;
+				if ( rtf[i] > maxrtf ) maxrtf = rtf[i];
+			}
+		});
+		return 0.5 + 0.5 * rtf[termIdx] / ( maxrtf + 1.0 ); // the + 1.0 is not really in the original docs, lets see...
+	}
+	return 0;
+};
+
+// tfidf: return the term frequency - inverse document frequency: high weight if term frequency in doc high but low document frequency
+// this is a measure of prominence of non-common words, thus lifting them beyond the noise
+BayesClassifier.prototype.tfidf = function(term, doc) { // calculate the term frequency for term in doc
+	//console.log("tfidf: " + term);
+	if ( typeof term !== 'undefined' )
+		return this.termFreq(term, doc) * this.invDocFreq(term);
+	return 0;
+};
+
+// PrintDocs
+BayesClassifier.prototype.printDocs = function() { // print docs to console
+  for (var i = 0; i < this.docs.length; i++) {
+	// elements that may be printed: stemmer, docs, lastAdded, features, classFeatures, classTotals, totalExamples, smoothing
+    console.log("Docs: " + JSON.stringify(this.docs[i]));
+	// Docs: {"label":"positive","value":["seem","help","patient"]}
+	console.log("Doc values: " + JSON.stringify(this.docs[i].value));
+	// Doc values: ["seem","help","patient"]
+  }
+  console.log("features: " + JSON.stringify(this.features));
+  // features: {"efficaci":1,"convinc":1,"give":1,"back":1,"qol":1,"lower":1,"off":1,"time":1,"seem":1,"help":1,"patient":1,"less":1,"dyskinesia":1,"weaker":1,"cumbersom":1,"not":1,"swim":1,"side":1,"effect":1,"readi":1,"difficult":1,"oper":1,"stronger":1}
+  console.log("stemmer: " + JSON.stringify(this.stemmer));
+  console.log("classFeatures: " + JSON.stringify(this.classFeatures));
+  // classFeatures: {"positive":{"0":2,"1":2,"2":2,"3":2,"4":2,"5":2,"6":2,"7":2,"8":2,"9":2,"10":2,"11":2,"12":3,"13":2},"negative":{"10":3,"12":3,"14":2,"15":3,"16":2,"17":2,"18":2,"19":2,"20":2,"21":2,"22":2}}
+  console.log("classTotals: " + JSON.stringify(this.classTotals));
+  // classTotals: {"positive":7,"negative":8}
+  for ( let i=0; i<this.docs.length; i++ ) {
+	console.log("tfidf " + i + " : " + this.docs[i].value[0] + " : " + this.tfidf(this.docs[i].value[0], this.docs[i]));
+  }
+};
+
+// docToFeatures: Returns an array with 1's or 0 for each feature in document (1=feature in doc, 0=not)
+BayesClassifier.prototype.docToFeatures = function(doc, ctortf) { // build feature index array and return it
+  var features = [];
+  var featuresTfidf = [];
+
+  if (this._isString(doc)) { // tokenize it if it is still a string
+    doc = this.stemmer.tokenizeAndStem(doc);
+  }
+  
+  for (var feature in this.features) {
+	//console.log("docToFeatures: " + feature + " index in doc " + doc.indexOf(feature) + " in " + doc);
+	let idxFtr = doc.indexOf(feature);
+	if ( ctortf )
+		features.push(Number(!!~idxFtr)); // if feature found, returns 1, 0 otherwise (bitwise not ~ turns positive indx to neg)
+		//console.log("docToFeatures: " + doc.indexOf(feature) + " ~ " + ~doc.indexOf(feature) + " ! " + !~doc.indexOf(feature) );
+	else {
+		if ( typeof idxFtr !== 'undefined' && idxFtr > -1 )
+			featuresTfidf.push(this.tfidf(feature, doc));
+	}
+  }
+  if ( ctortf ) return features; // return features array
+  else return featuresTfidf;
+};
+
+// classify: Returns class with highest probability for document.
+BayesClassifier.prototype.classify = function(doc) { // get classification with highest probability for document
+  var classifications = this.getClassifications(doc, true);
+  if (!this._size(classifications)) {
+	//console.log("not trained " + classifications);
+    throw 'Not trained';
+  }
+  return classifications[0].label;
+};
+
+// train: train the classifier on the added documents
+BayesClassifier.prototype.train = function() { // train classification
+  let totalDocs = this.docs.length;
+  for (let i = this.lastAdded; i < totalDocs; i++) {
+    let features = this.docToFeatures(this.docs[i].value, false); // .value contains the words of the document
+	//console.log("train features: " + features);
+    this.addExampleTfidf(features, this.docs[i].label); // here features is an array of 0s and 1s: 1=feature in doc, 0=not
+    this.lastAdded++;
+  }
+};
+
+// addExample: Increment the counter of each feature for each class
+BayesClassifier.prototype.addExample = function(docFeatures, label) { // increment the feature counter
+  if (!this.classFeatures[label]) {
+    this.classFeatures[label] = {};
+    this.classTotals[label] = 1;
+  }
+  this.totalExamples++;
+  
+  //console.log(JSON.stringify(docFeatures));
+
+  if (this._isArray(docFeatures)) {
+    let i = docFeatures.length;
+    this.classTotals[label]++;
+
+    while(i--) {
+      if (docFeatures[i]) {
+        if (this.classFeatures[label][i]) {
+          this.classFeatures[label][i]++;
+        } else {
+          this.classFeatures[label][i] = 1 + this.smoothing;
+        }
+      }
+    }
+  } else {
+    for (let key in docFeatures) {
+      value = docFeatures[key];
+
+      if (this.classFeatures[label][value]) {
+        this.classFeatures[label][value]++;
+      } else {
+        this.classFeatures[label][value] = 1 + this.smoothing;
+      }
+    }
+  }
+};
+
+// addExampleTfidf: adding up the TF-IDF weights of each feature for each class
+BayesClassifier.prototype.addExampleTfidf = function(docFeatures, label) { // increment the feature counter
+  if (!this.classFeatTfidf[label]) {
+    this.classFeatTfidf[label] = {};
+    this.classTotTfidf[label] = 1.0;
+  }
+  this.totalExamples++;
+
+  if (this._isArray(docFeatures)) {
+    let i = docFeatures.length;
+    this.classTotTfidf[label]++;
+
+    while(i--) {
+      if (docFeatures[i]) {
+        if (this.classFeatTfidf[label][i]) {
+          this.classFeatTfidf[label][i]+=docFeatures[i];
+        } else {
+          this.classFeatTfidf[label][i] = docFeatures[i];
+        }
+      }
+    }
+  } else {
+    for (let key in docFeatures) {
+      value = docFeatures[key];
+
+      if (this.classFeatTfidf[label][value]) {
+        this.classFeatTfidf[label][value]+=docFeatures[i];
+      } else {
+        this.classFeatTfidf[label][value] = docFeatures[i];
+      }
+    }
+  }
+};
+
+/**
+ * probabilityOfClass
+ * @desc
+ * calculate the probability of class for the document.
+ * http://en.wikipedia.org/wiki/Naive_Bayes_classifier
+ * P(c|d) = P(c)P(d|c)
+ *          ---------
+ *             P(d)
+ * P = probability
+ * c = class
+ * d = document
+ * P(c|d) = Likelihood(class given the document) P(class|document)
+ * P(d|c) = Likelihood(document given the classes). P(document|class)
+ *     same as P(x1,x2,...,xn|c) - document `d` represented as features `x1,x2,...xn`
+ * P(c) = Likelihood(class)
+ * P(d) = Likelihood(document)
+ * rewritten in plain english:
+ * posterior = prior x likelihood
+ *             ------------------
+ *                evidence
+ * The denominator can be dropped because it is a constant. For example,
+ * if we have one document and 10 classes and only one class can classify
+ * document, the probability of the document is the same.
+ * The final equation looks like this:
+ * P(c|d) = P(c)P(d|c) or P(class|document) = P(class)P(document|class)
+ */
+BayesClassifier.prototype.probabilityOfClass = function(docFeatures, classlabel, tfidf) {
+  let count = 0;
+  let prob = 0;
+
+  if (this._isArray(docFeatures)) {
+    let i = docFeatures.length;
+	
+	let tfidftot = 0.0;
+
+    // Iterate though each feature in document
+    while(i--) {
+      // Proceed if feature collection
+      if (docFeatures[i]) {
+
+	    if ( tfidf ) {
+			// for tfidf: adding up the TF-IDF weights instead of simply counting the number of words
+			count = this.classFeatTfidf[classlabel][i] + 0.01; // class feature value or 1.0 (in case class feature = 0)
+			tfidftot += count;
+		} else
+			// The number of occurances of the document feature in class
+			count = this.classFeatures[classlabel][i] || this.smoothing; // class feature value or 1.0 (in case class feature = 0) 
+
+        /* This is the `P(document|class)` part of the model.
+         * How often the class occurs. We simply count the relative
+         * feature frequencies in the corpus (document body).
+         * We divide the count by the total number of features for the class,
+         * and add it to the probability total.
+         * We're using Natural Logarithm here to prevent Arithmetic Underflow
+         * http://en.wikipedia.org/wiki/Arithmetic_underflow
+         */
+		if ( tfidf )
+			//prob += Math.log(count / this.classTotTfidf[classlabel]);
+			prob += Math.log(count / tfidftot);
+		else
+			prob += Math.log(count / this.classTotals[classlabel]);
+      }
+    }
+  } else {
+    for (let key in docFeatures) {
+		if ( tfidf ) {
+			count = this.classFeatTfidf[classlabel][docFeatures[key]];
+			tfidftot += count;
+			//prob += Math.log(count / this.classTotTfidf[classlabel]);
+			prob += Math.log(count / tfidftot);
+		} else {
+			count = this.classFeatures[classlabel][docFeatures[key]] || this.smoothing;
+			prob += Math.log(count / this.classTotals[classlabel]);
+		}
+    }
+  }
+
+  /* This is the `P(c)` part of the model.
+   * Divide the the total number of features in class by total number of all features. */
+  var featureRatio = 0.0;
+  if ( tfidf )
+	featureRatio = (this.classTotTfidf[classlabel] / this.totalExamples);
+  else
+	featureRatio = (this.classTotals[classlabel] / this.totalExamples);
+  // probability of class given document = P(d|c)P(c)
+  prob = featureRatio * Math.exp(prob); // convert back from logs (to prevent underflow)
+  console.log("prob " + prob);
+  return prob;
+};
+
+// getClassifications: Return array of document classes and their probability values.
+BayesClassifier.prototype.getClassifications = function(doc, tfidf) {
+  var classifier = this;
+  var labels = [];
+  //console.log("getclass: " + JSON.stringify(this.classFeatTfidf));
+  if ( tfidf) {
+  	  for (var className in this.classFeatTfidf) {
+		labels.push({
+		  label: className,
+		  value: classifier.probabilityOfClass(this.docToFeatures(doc, false), className, true)
+		});
+	  }
+
+  } else {
+	  for (var className in this.classFeatures) {
+		labels.push({
+		  label: className,
+		  value: classifier.probabilityOfClass(this.docToFeatures(doc, false), className, false)
+		});
+	  }
+  }
+  //console.log("getclass " + JSON.stringify(labels));
+  return labels.sort(function(x, y) {
+    return y.value - x.value;
+  });
+};
+
+BayesClassifier.prototype._isString = function(s) {
+  return typeof(s) === 'string' || s instanceof String;
+};
+
+BayesClassifier.prototype._isArray = function(s) {
+  return Array.isArray(s);
+};
+
+BayesClassifier.prototype._isObject = function(s) {
+  return typeof(s) === 'object' || s instanceof Object;
+};
+
+BayesClassifier.prototype._size = function(s) {
+  if (this._isArray(s) || this._isString(s) || this._isObject(s)) {
+    return s.length;
+  }
+  return 0;
+};
+
+var classifier = new BayesClassifier();
+
+var positiveDocuments = [
+  'efficacy convincing',
+  'gives back energy',
+  'lowers side effects',
+  'seems to help patients',
+  'helps convincingly',
+  'helps',
+  'brings back life'
+];
+
+var negativeDocuments = [
+  'too cumbersome difficult sdsdfsfd sdsdfsfd sdsdfsfd',
+  'patients can not swim sdsdfsfd sdsdfsfd',
+  'too many side effects sdsdfsfd sdsdfsfd',
+  'sdsdfsfd is not ready',
+  'difficult difficult operation',
+  'much more sdsdfsfd sdsdfsfd',
+  'not sure about'
+];
+
+classifier.addDocuments(positiveDocuments, 'positive');
+classifier.addDocuments(negativeDocuments, 'negative');
+
+//classifier.printDocs();
+
+classifier.train();
+
+//console.log(positiveDocuments[0]);
+//console.log("feature test: " + classifier.docToFeatures(positiveDocuments[0], false));
+
+//classifier.printDocs();
+
+console.log(classifier.classify('sdsdfsfd')); // neg
+console.log(classifier.classify('seems to help')); // "pos"
+console.log(classifier.classify('difficult sdsdfsfd')); // "neg"
+console.log(classifier.classify('convincing efficacy')); // "neg"
+console.log(classifier.classify('much more sdsdfsfd')); // neg
+
+</script>
+
+</body>
+</html>
