@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<p>One-hot encoding Test</p>
+
+<!--input type="number" id="myShift" value=4-->
+
+<button onclick="myFunction()">Try it</button>
+
+<p id="demo"></p>
+<p id="demo0"></p>
+<p id="demo1"></p>
+
+<script>
+'use strict';
+
+// small exercise: shift array by n elements without copying and only with primitive operations
+
+var mywords = 'Hello world, this is a test!';
+
+function myFunction() {
+	mywords = mywords.toLowerCase();
+	document.getElementById("demo").innerHTML = mywords;
+	let intEnc = [];
+	let oneHot = [];
+	//var shiftLen = parseInt(document.getElementById("myShift").value);
+	
+	for(let i=0; i<mywords.length; i++) {
+		intEnc.push(encInt(mywords.charAt(i)));
+		oneHot.push(encOneHot(mywords.charAt(i)));
+	}
+	
+	document.getElementById("demo0").innerHTML = intEnc;
+	document.getElementById("demo1").innerHTML = oneHot;
+	//console.log(oneHot);
+}
+
+function encInt(letter) { // integer encoding
+	let alphabet = 'abcdefghijklmnopqrstuvwxyz ,!';
+	return alphabet.indexOf(letter);
+}
+
+function encOneHot(letter) { // one-hot encoding
+	let alphabet = 'abcdefghijklmnopqrstuvwxyz ,!';
+	let retOneHot = [];
+	let intEnc = encInt(letter);
+	for(let i=0; i<alphabet.length; i++) {
+		let oneHot = i === intEnc ? 1 : 0;
+		retOneHot.push(oneHot);
+	}
+	return retOneHot;
+}
+
+</script>
+
+</body>
+</html>
