@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<p>Shift array by n elements without copying and only with primitive operations</p>
+
+<input type="number" id="myShift" value=4>
+
+<button onclick="myFunction()">Try it</button>
+
+<p id="demo0"></p>
+<p id="demo1"></p>
+
+<script>
+'use strict';
+
+// small exercise: shift array by n elements without copying and only with primitive operations
+
+var myarr = [0,1,2,3,4,5,6,7,8];
+
+function myFunction() {
+	document.getElementById("demo0").innerHTML = myarr;
+	var shiftLen = parseInt(document.getElementById("myShift").value);
+	
+	let myLen0 = myarr.length; // remember original array length
+	shiftLen = shiftLen > myLen0 ? myLen0 : shiftLen; // length check
+	
+	for (let i=0; i<myLen0 + myLen0 % shiftLen; i++) // expand array by the remainder of the shiftlenght plus one shiftlength
+		myarr.push(myarr[i]);
+	
+	let myLen = myarr.length;
+	let j=0;
+	
+	for(let i=0; i<shiftLen; i++) { // for each element in the shiftlength
+		let swapIn = myarr[i];
+		j=0;
+		while( shiftLen*j < myLen ) { // move element up the array, swapping it in and the one at the higher position out
+			let swapOut = myarr[i+shiftLen*(j+1)];
+			if ( i+shiftLen*(j+1) < myLen )
+				myarr[i+shiftLen*(j+1)] = swapIn;
+			else
+				myarr.push(swapIn);
+			j++;
+			swapIn=swapOut;
+		}
+	}
+	for(let i=myLen0; i<myarr.length; i++) { // move the surplus elements at the end beyond the original array length to the beginning
+		myarr[i-myLen0] = myarr[i];
+	}
+	myarr.splice(myLen0, myarr.length-myLen0); // remove the surplus elements at the end
+	
+	document.getElementById("demo1").innerHTML = myarr;
+}
+</script>
+
+</body>
+</html>
