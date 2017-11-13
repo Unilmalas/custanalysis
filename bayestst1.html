@@ -414,12 +414,13 @@ BayesClassifier.prototype.printDocs = function() { // print docs to console
   console.log("features: " + JSON.stringify(this.features));
   // features: {"efficaci":1,"convinc":1,"give":1,"back":1,"qol":1,"lower":1,"off":1,"time":1,"seem":1,"help":1,"patient":1,"less":1,"dyskinesia":1,"weaker":1,"cumbersom":1,"not":1,"swim":1,"side":1,"effect":1,"readi":1,"difficult":1,"oper":1,"stronger":1}
   console.log("stemmer: " + JSON.stringify(this.stemmer));
-  console.log("classFeatures: " + JSON.stringify(this.classFeatures));
-  // classFeatures: {"positive":{"0":2,"1":2,"2":2,"3":2,"4":2,"5":2,"6":2,"7":2,"8":2,"9":2,"10":2,"11":2,"12":3,"13":2},"negative":{"10":3,"12":3,"14":2,"15":3,"16":2,"17":2,"18":2,"19":2,"20":2,"21":2,"22":2}}
-  console.log("classTotals: " + JSON.stringify(this.classTotals));
+  console.log("classFeatures: " + JSON.stringify(this.classFeatTfidf));
+  // classFeatures: {"positive":{"0":57.60490313955878,"1":51.50503087362104,"2":36.604903139558786,"3":10.5,"4":10.5},"negative":{"0":37.95909584768032,"1":32.286833023314664,"2":29.116137283452684,"3":30.333333333333332}}
+  console.log("classTotals: " + JSON.stringify(this.classTotTfidf));
   // classTotals: {"positive":7,"negative":8}
   for ( let i=0; i<this.docs.length; i++ ) {
-	console.log("tfidf " + i + " : " + this.docs[i].value[0] + " : " + this.tfidf(this.docs[i].value[0], this.docs[i]));
+	//console.log("tfidf " + i + " : " + this.docs[i].value[0] + " : " + JSON.stringify(this.docs[i].value));
+	console.log("tfidf " + i + " : " + this.docs[i].value[0] + " : " + this.tfidf(this.docs[i].value[0], this.docs[i].value));
   }
 };
 
@@ -427,11 +428,9 @@ BayesClassifier.prototype.printDocs = function() { // print docs to console
 BayesClassifier.prototype.docToFeatures = function(doc, ctortf) { // build feature index array and return it
   var features = [];
   var featuresTfidf = [];
-
   if (this._isString(doc)) { // tokenize it if it is still a string
     doc = this.stemmer.tokenizeAndStem(doc);
   }
-  
   for (var feature in this.features) {
 	//console.log("docToFeatures: " + feature + " index in doc " + doc.indexOf(feature) + " in " + doc);
 	let idxFtr = doc.indexOf(feature);
@@ -528,7 +527,6 @@ BayesClassifier.prototype.addExampleTfidf = function(docFeatures, label) { // in
   } else {
     for (let key in docFeatures) {
       value = docFeatures[key];
-
       if (this.classFeatTfidf[label][value]) {
         this.classFeatTfidf[label][value]+=docFeatures[i];
       } else {
@@ -570,14 +568,11 @@ BayesClassifier.prototype.probabilityOfClass = function(docFeatures, classlabel,
 
   if (this._isArray(docFeatures)) {
     let i = docFeatures.length;
-	
 	let tfidftot = 0.0;
-
     // Iterate though each feature in document
     while(i--) {
       // Proceed if feature collection
       if (docFeatures[i]) {
-
 	    if ( tfidf ) {
 			// for tfidf: adding up the TF-IDF weights instead of simply counting the number of words
 			count = this.classFeatTfidf[classlabel][i] + 0.01; // class feature value or 1.0 (in case class feature = 0)
@@ -678,11 +673,11 @@ var classifier = new BayesClassifier();
 
 var positiveDocuments = [
   'efficacy convincing',
-  'gives back energy',
+  'gives back energy dferfdfsdfsdf',
   'lowers side effects',
   'seems to help patients',
   'helps convincingly',
-  'helps',
+  'helps strength despite side effects',
   'brings back life'
 ];
 
@@ -690,29 +685,29 @@ var negativeDocuments = [
   'too cumbersome difficult sdsdfsfd sdsdfsfd sdsdfsfd',
   'patients can not swim sdsdfsfd sdsdfsfd',
   'too many side effects sdsdfsfd sdsdfsfd',
-  'sdsdfsfd is not ready',
+  'sdsdfsfd is not ready whatever',
   'difficult difficult operation',
   'much more sdsdfsfd sdsdfsfd',
-  'not sure about'
+  'not sure about side effects dfsdfsdf tzhghtzhg thweewe thfffsdfsdf'
 ];
 
 classifier.addDocuments(positiveDocuments, 'positive');
 classifier.addDocuments(negativeDocuments, 'negative');
 
-//classifier.printDocs();
+classifier.printDocs();
 
 classifier.train();
 
 //console.log(positiveDocuments[0]);
 //console.log("feature test: " + classifier.docToFeatures(positiveDocuments[0], false));
 
-//classifier.printDocs();
+classifier.printDocs();
 
 console.log(classifier.classify('sdsdfsfd')); // neg
-console.log(classifier.classify('seems to help')); // "pos"
-console.log(classifier.classify('difficult sdsdfsfd')); // "neg"
-console.log(classifier.classify('convincing efficacy')); // "neg"
-console.log(classifier.classify('much more sdsdfsfd')); // neg
+console.log(classifier.classify('seems to help')); // pos
+console.log(classifier.classify('difficult sdsdfsfd')); // neg
+console.log(classifier.classify('convincing efficacy thfffsdfsdf')); // neg
+console.log(classifier.classify('thweewe')); // neg
 
 </script>
 
