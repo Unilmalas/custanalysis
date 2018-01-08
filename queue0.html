@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<p>PrioQueue in JS</p>
+
+<!--input type="number" id="myShift" value=4-->
+
+<button onclick="myFunction()">Try it</button>
+
+<p id="demo0"></p>
+<p id="demo1"></p>
+
+<script>
+'use strict';
+
+// prio queue implementation in JS: insert by prio and pop top-prio item
+
+function pqItem(value, prio) { // constructor queue item with init value
+	this.value = value;
+	if ( typeof prio === "number" )
+		this.prio = prio;
+	else return {};
+}
+
+function sortprio(queue, asc) { // sort queue by prio
+	if ( asc ) { // ascending
+		queue.sort( function(a,b) { return a.prio - b.prio; });
+	} else { // descending
+		queue.sort( function(a,b) { return b.prio - a.prio; });
+	}
+	return queue;
+}
+
+function insert(queue, item) { // insert a queue item
+	if ( typeof item !== 'object' ) return [];
+	if ( typeof queue === 'undefined' )
+		queue = [];
+	queue.push(item);
+	return sortprio(queue, false);
+}
+
+function shifttop(queue) { // shift top prio item off queue and return it
+	if ( typeof queue === 'undefined' ) return 'undefined';
+	if ( queue.length > 0 ) {
+		return queue.shift();
+	}
+	return {};
+}
+
+function myFunction() {
+	let myQ = [];
+	insert(myQ, new pqItem('a', 2));
+	insert(myQ, new pqItem('b', 3));
+	insert(myQ, new pqItem('c', 0));
+	insert(myQ, new pqItem('d', 6));
+	document.getElementById("demo0").innerHTML = JSON.stringify(shifttop(myQ));
+	document.getElementById("demo1").innerHTML = JSON.stringify(myQ);
+}
+</script>
+
+</body>
+</html>
