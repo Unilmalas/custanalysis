@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<p>Hash table example</p>
+
+<input type="text" id="myVal" value="testentry">
+
+<button onclick="myFunction()">Insert</button>
+
+<p id="demo0"></p>
+
+<script>
+'use strict';
+
+// simple hash table example
+
+var myht = []; // hash table
+
+function djb2(word) { // djb2 hash function, word is a string
+    if ( typeof word !== 'string' ) return 0;
+	let hashAddress = 0;
+    for (let i=0; i<word.length; i++)
+        hashAddress = ((hashAddress << 5) + hashAddress) + word.charCodeAt(i);
+    return hashAddress;
+}
+
+function insrt(ht, key, value) { // insert key-value pair into hash-table (no collision handling yet)
+	if ( typeof key !== 'number' ) return -1;
+	let tempentr = {	key: 		key,
+						chainidx:	0,
+						value: 		value };
+	// collision handling: chaining
+	let cidx = getcidx(ht, key);
+	if ( cidx >= 0 ) // collision
+		tempentr.chainidx = cidx + 1;
+	ht.push(tempentr);
+	return 1;
+}
+
+function get(ht, key) { // retrieve value via key from hash table
+	if ( typeof key !== 'number' ) return -1;
+	for ( let i=0; i<ht.length; i++ ) {
+		if ( ht[i].key === key )
+			return ht[i].value;
+	}
+	return -1;	
+}
+
+function getcidx(ht, key) { // get chain idx
+	if ( typeof key !== 'number' ) return -1;
+	let maxcidx = -1;
+	for ( let i=0; i<ht.length; i++ ) {
+		if ( ht[i].key === key && ht[i].chainidx > maxcidx )
+			maxcidx = ht[i].chainidx;
+	}
+	return maxcidx;
+}
+
+function myFunction() {
+	let tempentr = {	key:	 	0,
+						chainidx:	0,
+						value:	 	'' };
+	tempentr.value = document.getElementById("myVal").value;
+	tempentr.key = djb2(tempentr.value);
+	insrt(myht, tempentr.key, tempentr.value);
+	document.getElementById("demo0").innerHTML = get(myht, tempentr.key);
+	console.log(myht);
+}
+</script>
+
+</body>
+</html>
