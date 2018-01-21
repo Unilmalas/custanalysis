@@ -17,18 +17,18 @@
 
 function myFunction() {
 	let t0 = performance.now();
-	//for ( var i=0; i<1000; i++) tryA(Math.floor(Math.random() * 10), Math.floor(Math.random() * 10));
-	//for ( var i=0; i<1000; i++) lnA(Math.floor(Math.random() * 10));
-	for ( var i=0; i<10000; i++) tst0();
+	//for ( let i=0; i<1000; i++) tryA(Math.floor(Math.random() * 10), Math.floor(Math.random() * 10));
+	//for ( let i=0; i<1000; i++) lnA(Math.floor(Math.random() * 10));
+	for ( let i=0; i<10000; i++) tst0();
 	let t1 = performance.now();
 	console.log("Call to A took " + (t1 - t0) + " milliseconds.")
 	
 	document.getElementById("demo0").innerHTML = "call to A: " + (t1 - t0);
 	
 	t0 = performance.now();
-	//for ( var i=0; i<1000; i++) tryB(Math.floor(Math.random() * 10), Math.floor(Math.random() * 10));
-	//for ( var i=0; i<1000; i++) lnB(Math.floor(Math.random() * 10));
-	for ( var i=0; i<10000; i++) tst1();
+	//for ( let i=0; i<1000; i++) tryB(Math.floor(Math.random() * 10), Math.floor(Math.random() * 10));
+	//for ( let i=0; i<1000; i++) lnB(Math.floor(Math.random() * 10));
+	for ( let i=0; i<10000; i++) tst1();
 	t1 = performance.now();
 	console.log("Call to B took " + (t1 - t0) + " milliseconds.")
 	
@@ -45,6 +45,20 @@ function myFunction() {
 	console.log("defaults: " + defaultVal() + " or " + defaultVal(5));
 	
 	mapFltrRed();
+	
+	destruct0();
+	
+	//console.log('fib rec: ' + fibrec(12));
+	//console.log('fib loop: ' + fibloop(12));
+	
+	t0 = performance.now();
+	for ( let i=0; i<10000; i++) fibrec(12);
+	t1 = performance.now();
+	console.log("Call to fibrec took " + (t1 - t0) + " milliseconds.")
+	t0 = performance.now();
+	for ( let i=0; i<10000; i++) fibloop(12);
+	t1 = performance.now();
+	console.log("Call to fibloop took " + (t1 - t0) + " milliseconds.")
 }
 
 // variable declarations:
@@ -101,7 +115,7 @@ function tst1() {
 
 var th0 = new function this0() {
 	this.myVar = 0;
-	var that = this;
+	const that = this;
 	setTimeout( function() { // new this in the function
 		that.myVar++;
 		console.log("setting th0: " + that.myVar);
@@ -140,6 +154,53 @@ function mapFltrRed() { // functional programming to avoid for, forEach
 	const sumN = numbers.reduce((totl, cval) => totl + cval, 0); // array.reduce(function(tot, currentVal, currentInd, arr), initialVal)
 	
 	console.log("dbl: " + doubleN + " even: " + evenN + " sum: " + sumN);
+}
+
+// Destructuring objects and arrays: recreating new variables by extracting some values from data stored in objects or arrays
+function destruct0() {
+	const person = {
+		firstName: "Nick",
+		lastName: "Anderson",
+		age: 35,
+		sex: "M"
+	}
+	const { firstName: first, age, city = "Paris" } = person; // That's it !
+	console.log(age) // 35 -- A new variable age is created and is equal to person.age
+	console.log(first) // "Nick" -- A new variable first is created and is equal to person.firstName
+	//console.log(firstName) // Undefined -- person.firstName exists BUT the new variable created is named first
+	console.log(city) // "Paris" -- A new variable city is created and since person.city is undefined, city is equal to the default value provided "Paris".
+	
+	function joinFirstLastName0({ firstName, lastName }) { // we create firstName and lastName variables by destructuring person parameter
+		return firstName + '-' + lastName;
+	}
+	console.log(joinFirstLastName0(person)); // "Nick-Anderson"
+	
+	const joinFirstLastName1 = ({ firstName, lastName }) => firstName + '-' + lastName;
+	console.log(joinFirstLastName1(person)); // "Nick-Anderson"
+	
+	const myArray = ["a", "b", "c"];
+	const [x, y] = myArray; // That's it !
+	console.log(x); // "a"
+	console.log(y); // "b"
+}
+
+function fibrec(x) {
+	//console.log(' f: ' + x);
+	if ( x > 1. ) return ( fibrec( x-1. ) + fibrec( x-2. ) );
+	return x;
+}
+
+function fibloop(x) {
+	let x0 = 1.;
+	let x1 = 1.;
+	let ctr = 2;
+	while (ctr < x) {
+		let xt = x0 + x1;
+		x0 = x1;
+		x1 = xt;
+		ctr++;
+	}
+	return x1;
 }
 
 </script>
