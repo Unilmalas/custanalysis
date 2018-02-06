@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<canvas id="myCanvas" width="400" height="400" style="border:1px solid #d3d3d3;">
+Your browser does not support the HTML5 canvas tag.</canvas>
+
+<script>
+'use strict';
+
+// 3Blue1Brown Fourier Video-inspired
+// https://www.youtube.com/watch?v=spUNpyF58BY&t=28s
+
+var c = document.getElementById("myCanvas");
+var ctx = c.getContext("2d");
+
+var cmx = [];
+
+// need to draw intensity, cycles and x-coordinate of center of mass
+
+drawLin(cos, 30, 30, 150, 100, 4, 25, ctx); // intensity
+
+for ( let i=0; i<180; i++ )
+	drawPol(cos, 30, 150, 150, 150, i/(2.*Math.PI), 30, ctx); // cycles ans center of mass as dot
+
+drawLin(fcmx, 200, 180, 180, 100, 1, 1, ctx); // x-coord ctr of mass
+
+//console.log(cmx);
+
+function drawLin(func, x0, y0, width, height, sclx, scly, ctx) { // func is a function with one argument
+	// coordinates
+	ctx.beginPath();
+	ctx.moveTo(x0, y0);
+	ctx.lineTo(x0, y0+height);
+	ctx.moveTo(x0, y0+height/2);
+	ctx.lineTo(x0+width, y0+height/2);
+	ctx.moveTo(x0, y0+height/2);
+	// function
+	for ( let i=0; i<width; i++ ) {
+		ctx.lineTo( x0 + i, y0 + height/2 - scly*func(i/sclx));
+	}
+	ctx.stroke();
+}
+
+function drawPol(func, x0, y0, width, height, sclx, scly, ctx) { // func is a function with one argument
+	let xcm = 0; // init center of mass
+	let ycm = 0;
+	let length = 0;
+	// coordinates
+	ctx.beginPath();
+	ctx.moveTo(x0, y0+height/2);
+	ctx.lineTo(x0+width, y0+height/2);
+	ctx.moveTo(x0+width/2, y0+height);
+	ctx.lineTo(x0+width/2, y0);
+	ctx.moveTo(x0+width/2, y0+height/2);
+	// function
+	for ( let i=0; i<100; i++ ) { // check cycle scaling
+		let alpha = i / sclx;
+		let fval = scly*func(alpha);		
+		let x = fval*Math.cos(alpha);
+		let y = fval*Math.sin(alpha);
+		ctx.lineTo( x0 + width/2 + x, y0 + height/2 + y );
+		xcm += x;
+		ycm += y;
+		length += 1;
+	}
+	ctx.stroke();
+	// center of mass
+	//console.log('dxm: ' + xcm + ' dym: ' + ycm);
+	xcm /= length;
+	ycm /= length;
+	xcm += x0 + width/2;
+	ycm += y0 + height/2;
+	cmx.push(xcm); // store ctr of mass
+	ctx.fillStyle="#FF0000";
+	ctx.fillRect(xcm, ycm, 3, 3);
+}
+
+function sin(x) {
+	return Math.sin(x)+1.;
+}
+
+function cos(x) {
+	return Math.cos(x)+1.;
+}
+
+function sincos(x) {
+	return 0.4 * Math.sin(x/2) + 1.4 * Math.cos(x+1);
+}
+
+function fcmx(x) {
+	return cmx[~~x];
+}
+
+</script>
+</body>
+</html>
