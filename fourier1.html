@@ -1,32 +1,38 @@
 <!DOCTYPE html>
 <html>
-<body>
-
-<canvas id="myCanvas" width="400" height="400" style="border:1px solid #d3d3d3;">
-Your browser does not support the HTML5 canvas tag.</canvas>
-
+<canvas id="gc" width="400" height="400"></canvas>
 <script>
 'use strict';
 
 // 3Blue1Brown Fourier Video-inspired
 // https://www.youtube.com/watch?v=spUNpyF58BY&t=28s
 
-var c = document.getElementById("myCanvas");
-var ctx = c.getContext("2d");
+window.onload=function() {
+	var canv=document.getElementById("gc");
+	var ctx=canv.getContext("2d");
+	setInterval(game0, 1000 * framerate, canv, ctx); // calls a function or evaluates an expression at specified intervals
+}
 
+var framerate = 1/12;
 var cmx = [];
+var gctr = 0;
 
-// need to draw intensity, cycles and x-coordinate of center of mass
+function game0(canv, ctx) {
 
-drawLin(cos, 30, 30, 150, 100, 4, 25, ctx); // intensity
+	ctx.fillStyle="black";
+	ctx.fillRect(0,0,canv.width,canv.height); // draw background
+	ctx.strokeStyle="lime";
+	// need to draw intensity, cycles and x-coordinate of center of mass
 
-for ( let i=0; i<500; i++ )
-	drawPol(cos, 30, 150, 150, 150, (2.*Math.PI)/100, 30, i, ctx); // cycles ans center of mass as dot
-//drawPol(cos, 30, 150, 150, 150, (2.*Math.PI)/100, 30, 4, ctx); // cycles ans center of mass as dot
+	drawLin(cos, 30, 30, 150, 100, 4, 25, ctx); // intensity
 
-drawLin(fcmx, 200, 180, 180, 100, 1, 1, ctx); // x-coord ctr of mass
+	drawPol(cos, 30, 150, 150, 150, (2.*Math.PI)/100, 30, gctr, ctx); // cycles ans center of mass as dot
 
-//console.log(cmx);
+	drawLin(fcmx, 200, 180, 180, 100, 1, 1, ctx); // x-coord ctr of mass
+	
+	gctr++;
+	
+}
 
 function drawLin(func, x0, y0, width, height, sclx, scly, ctx) { // func is a function with one argument
 	// coordinates
@@ -57,7 +63,7 @@ function drawPol(func, x0, y0, width, height, sclx, scly, cycls, ctx) { // func 
 	// function
 	for ( let i=0; i<100; i++ ) { // check cycle scaling
 		let alpha = i * sclx;
-		let fval = scly*func(cycls*alpha); // cycles per second as parameter enters here	
+		let fval = scly*func(cycls*alpha);	// cycles per second as parameter enters here	
 		let x = fval*Math.cos(alpha);
 		let y = fval*Math.sin(alpha);
 		ctx.lineTo( x0 + width/2 + x, y0 + height/2 + y );
