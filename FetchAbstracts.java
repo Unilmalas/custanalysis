@@ -23,68 +23,93 @@ public class FetchAbstracts {
 		String workStr = "";
 		int absPos = 0;
 		int keyPos = 0;
+		
+		List<Abstract> aStorage = new ArrayList<Abstract>(); // array list for abstracts raw storage
+		Abstract tempA = new Abstract("","","","");
 
 		try {
 			
-			/*
 			// read file with paper title and link
-			BufferedReader br = new BufferedReader(new FileReader("file.txt"));
+			BufferedReader pubbr = new BufferedReader(new FileReader("FetchAbstractsOut.txt"));
 			try {
 				StringBuilder sb = new StringBuilder();
-				String line = br.readLine();
-
+				String line = pubbr.readLine();
 				while (line != null) {
 					sb.append(line);
 					sb.append(System.lineSeparator());
-					line = br.readLine();
+					line = pubbr.readLine();
+					if ( line != null ) {
+						int sepidx = line.indexOf(";");
+						if ( sepidx > -1 ) {
+							tempA.title = line.substring(0, sepidx);
+							tempA.link = line.substring(sepidx+1, line.length());
+						}
+						//System.out.println(tempA.title);
+						aStorage.add(new Abstract(tempA.link, tempA.title,"",""));
+					}
 				}
 				String everything = sb.toString();
+				//System.out.println(everything);
 			} finally {
-				br.close();
-			}*/
+				pubbr.close();
+			}
+			
+			//System.out.println("++++++++++++++++++++++++++");
 			
 			// might need to wait a random time to hide robot
 			//TimeUnit.SECONDS.sleep(1); // java.util.concurrent.TimeUnit
 			
-			// access URL and read out abstract and keywords
-			URL url = new URL("https://www.ncbi.nlm.nih.gov" + cLink);
+			//for (Abstract thisA : aStorage) { // process all pubs just read
+			for ( int i=0; i<aStorage.size(); i++) {
+				//System.out.println("xxxxxx " + aStorage.get(i).title);
+				tempA.title = aStorage.get(i).title;
+				tempA.link = aStorage.get(i).link;
+				// access URL and read out abstract and keywords
+				URL url = new URL("https://www.ncbi.nlm.nih.gov" + tempA.link);
+				BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
+				URLConnection connection = url.openConnection();
+				// read abstract
+				while (null != (strTemp = br.readLine())) {
+					// abstracts come in different flavors
+					// identifier: <div class="abstr">
+					absPos = strTemp.indexOf(strAbsID);
+					keyPos = strTemp.indexOf(strKeywrdID);
+					if ( absPos > -1 && keyPos > -1 ) {
+						abstrStr = strTemp.substring(absPos+20, keyPos-1); // link
+						//System.out.println(abstrStr);
+						tempA.text = abstrStr;
+					}										
+					// identifier: <div class="keywords">
+					if ( keyPos > -1 ) {
+						workStr = strTemp.substring(keyPos+23, strTemp.length()-1);
+						keyStr = strTemp.substring(keyPos+23, workStr.indexOf("</div>")+keyPos+23); // link
+						//System.out.println(keyStr);
+						tempA.keywords = keyStr;
+					}
+				} // while... readLine
+				aStorage.set(i, new Abstract(tempA.link, tempA.title, tempA.text, tempA.keywords));
+				//System.out.println(aStorage.get(i));
+			} // for... Abstract
 
-			BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
-			URLConnection connection = url.openConnection();
-
-			// read abstract
-			while (null != (strTemp = br.readLine())) {
-				// abstracts come in different flavors
-				// identifier: <div class="abstr">
-				absPos = strTemp.indexOf(strAbsID);
-				keyPos = strTemp.indexOf(strKeywrdID);
-				if ( absPos > -1 && keyPos > -1 ) {
-					abstrStr = strTemp.substring(absPos+20, keyPos-1); // link
-					System.out.println(abstrStr);
-				}										
-				// identifier: <div class="keywords">
-				if ( keyPos > -1 ) {
-					workStr = strTemp.substring(keyPos+23, strTemp.length()-1);
-					keyStr = strTemp.substring(keyPos+23, workStr.indexOf("</div>")+keyPos+23); // link
-					System.out.println(keyStr);
-				}		
-			} // while... readLine
-			
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 		
+		// print abstracts
+		//for (Abstract thisA : aStorage) {
+		//	System.out.println(thisA.title + thisA.text + thisA.keywords);
+		//}
+		
 		// print publist (raw)
 		//PrintWriter pw = new PrintWriter(new FileOutputStream(new File("persons.txt"), true /* append = true */));
-		/*try(PrintWriter writer = new PrintWriter("FetchAbstractsOut.txt", "UTF-8");) {
-			for (Map.Entry<String, Publication> entry : pubList.entrySet()) {
-				//System.out.println("Key: " + entry.getKey() + ". Value: " + entry.getValue().link);
-				//System.out.println(entry.getKey() + ";" + entry.getValue().link);
-				writer.println(entry.getKey() + ";" + entry.getValue().link);
+		try(PrintWriter writer = new PrintWriter("AbstractsFull.txt", "UTF-8");) {
+			for (Abstract thisA : aStorage) {
+				writer.println(thisA.title + thisA.text + thisA.keywords);
 			}
 			writer.close();
 		} catch (IOException e) {
 			System.err.println(e);
-		}*/
+		}
+	  
 	} // main
 }
