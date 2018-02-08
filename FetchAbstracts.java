@@ -5,27 +5,36 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
  
-public class PubNet {
+public class FetchAbstracts {
+	
+	static boolean isNumeric(String s) {  
+		return s != null && s.matches("[-+]?\\d*\\.?\\d+");  
+	}
  
-	public static void main(String[] args) {
+	public static void main(String[] args) { // to combine terms add with +, e.g. "parkinson+motor"
 		String searchTerm = "aspirin";
-		int maxPages = 3;
+		int npages = 2;
 		if (args.length > 0) searchTerm = args[0];
-		if (args.length > 1) maxPages = Integer.parseInt(args[1]);
-		
-		String strRslt = new String("rslt");
-		String strDocTitle = new String("docsum_title");
+		if (args.length > 1) npages = Integer.parseInt(args[1]); // how many pages of results to process
 		String cookieHeader = "";
+		
+		String strTemp = "";
+		String strRslt = new String("rslt");
+		int rsltPos = 0;
+		String strPubLink = new String("a href=\"/pubmed"); // beginning of publication link
+		// the full link to the publication will then be: https://www.ncbi.nlm.nih.gov/pubmed/29413803
+		String strDocTitle = new String("docsum_title"); // title text after this
+		int linkPos = 0;
+		int titlePos = 0;
+		String linkStr = new String("");
 		String titleStr = new String("");
 		String authStr = new String("");
 		String jrnlStr = new String("");
 		String yearStr = new String("");
-		String strTemp = "";
-		int rsltPos = 0;
-		int titlePos = 0;
 		
 		// publication master list as a tree map (unique and sorted)
 		TreeMap<String,Publication> pubList = new TreeMap<String,Publication>();
+			
 		// author master list as HashMap (unique key but unsorted)
 		HashMap<String,AuthorLink> authList = new HashMap<String,AuthorLink>();
 			
@@ -58,9 +67,13 @@ public class PubNet {
 			// fill publications
 			while (null != (strTemp = br.readLine())) {
 				rsltPos++;
-				
 				//titlePos = strTemp.indexOf(strDocTitle);
 				for (String resStr: strTemp.split(strRslt)) {
+					linkPos = resStr.indexOf(strPubLink);
+					if ( linkPos > -1 ) {
+						linkStr = resStr.substring(linkPos+8, linkPos+24); // link
+						//System.out.println(linkStr);
+					}
 					titlePos = resStr.indexOf(strDocTitle);
 					if ( titlePos > -1 ) {
 						titleStr = resStr.substring(titlePos+14, resStr.indexOf("</a>")); // title
@@ -76,23 +89,25 @@ public class PubNet {
 						//System.out.println(yearStr);
 						//System.out.println("***********************");
 						
-						// store data in publication treemap
-						Publication cPub = new Publication("", titleStr, authStr, jrnlStr, Integer.parseInt(yearStr));
+						if ( !isNumeric(yearStr) )
+							yearStr = "0000";
+						Publication cPub = new Publication(linkStr, titleStr, authStr, jrnlStr, Integer.parseInt(yearStr));
 						pubList.put(titleStr, cPub);
 					}
 				}
-			}
+			} // while... readLine
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 		
-		//System.out.println("++++++++++++++++++++++++++++++++++++");
-		
 		// nasty: 2+ result page only accessible via "next page" - finally got this to work: need these form fields filled plus the cookie
 		// ( a lot of network-log reading in Chromes developer tools )
 		
-		for ( int cPage=2; cPage<maxPages; cPage++) { // for now 4 pages plus the first one
+		// add loop here: process next pages ++++++++++++++++++++++++++++
+		int cPage = 1; // have already processed first page
+		while ( cPage < npages ) {
+			System.out.println("++++++++++++++++++++++++++++++++++++");
 			try {
 				URL purl = new URL("https://www.ncbi.nlm.nih.gov/pubmed");
 				// fill data of POST request
@@ -136,20 +151,20 @@ public class PubNet {
 
 					// read response
 					BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
-					strTemp = "";
-					rsltPos = 0;
-					titlePos = 0;
-					
-					// fill publications
+
 					while (null != (strTemp = br.readLine())) {
 						rsltPos++;
-						
 						//titlePos = strTemp.indexOf(strDocTitle);
 						for (String resStr: strTemp.split(strRslt)) {
+							linkPos = resStr.indexOf(strPubLink);
+							if ( linkPos > -1 ) {
+								linkStr = resStr.substring(linkPos+8, linkPos+24); // link
+								System.out.println(linkStr);
+							}
 							titlePos = resStr.indexOf(strDocTitle);
 							if ( titlePos > -1 ) {
 								titleStr = resStr.substring(titlePos+14, resStr.indexOf("</a>")); // title
-								System.out.println(titleStr);
+								//System.out.println(titleStr);
 								resStr = resStr.substring(resStr.indexOf("</a>")+5, resStr.length());
 								authStr = resStr.substring(resStr.indexOf("desc")+6, resStr.indexOf("</p>")-1); // authors
 								//System.out.println(authStr);
@@ -162,19 +177,24 @@ public class PubNet {
 								//System.out.println("***********************");
 								
 								// store data in publication treemap
-								Publication cPub = new Publication("", titleStr, authStr, jrnlStr, Integer.parseInt(yearStr));
+								if ( !isNumeric(yearStr) )
+									yearStr = "0000";
+								Publication cPub = new Publication(linkStr, titleStr, authStr, jrnlStr, Integer.parseInt(yearStr));
 								pubList.put(titleStr, cPub);
-								//System.out.println(titleStr);
 							}
 						}
-					}
+					} // while... readLine
+					
 				} catch (IOException ex) {
 					//...
 				}
+				
 			} catch (MalformedURLException ex) {
 				//do exception handling here
 			}
-		} // for...cPage
+			cPage++;
+		} // while... npages
+		// close loop over next pages here ++++++++++++++++++++++++++++++++++++++++++
 		
 		// process publications and fill author distance matrix (sparse - we attach everything to an author and only fill existing relationships)
 		// Get a set of the entries
@@ -207,15 +227,12 @@ public class PubNet {
 					cAuthor.LinkAuthor(pubAuthors[j].trim(), 1);
 				}
 			}
+		} // while... hasNext
+		
+		// print publist (raw)
+		for (Map.Entry<String, Publication> entry : pubList.entrySet()) {
+			System.out.println("Key: " + entry.getKey() + ". Value: " + entry.getValue().link);
 		}
 		
-		// test output
-		for(Map.Entry<String,AuthorLink> entry : authList.entrySet()) {
-			String key = entry.getKey();
-			AuthorLink value = entry.getValue();
-			//System.out.println(key + " : " + value.PrintLinkedAuth());
-			System.out.println(value.getAuthor() + " : " + value.PrintLinkedAuth());
-		}
-		
-	}
+	} // main
 }
