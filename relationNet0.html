@@ -136,14 +136,18 @@ var authors = [];
 authors.push(new Author(new Vec(50.,50.), new Vec(1.,1.), 8));
 authors.push(new Author(new Vec(200.,200.), new Vec(-1.,-1.), 5));
 authors.push(new Author(new Vec(200.,50.), new Vec(0.,0.), 5));
+authors.push(new Author(new Vec(180.,150.), new Vec(0.,1.), 3));
 authors[0].addConn(authors[1]);
 authors[1].addConn(authors[0]);
+authors[2].addConn(authors[3]);
+authors[3].addConn(authors[2]);
 
 function game0(canv, ctx) {
 
 	let dt = 1.0;
-	for ( let i=0; i<3; i++ ) {
-		for ( let j=0; j<3; j++ ) {
+	let nauths = authors.length;
+	for ( let i=0; i<nauths; i++ ) {
+		for ( let j=0; j<nauths; j++ ) {
 			if ( i !== j )
 				authors[i].updpos(authors[j], dt, 200, 200);
 		}
@@ -154,9 +158,9 @@ function game0(canv, ctx) {
 	ctx.fillRect(0,0,canv.width,canv.height); // draw background
 	ctx.strokeStyle="lime";
 	
-	authors[0].draw(ctx);
-	authors[1].draw(ctx);
-	authors[2].draw(ctx);
+	for ( let i=0; i<nauths; i++ ) {
+		authors[i].draw(ctx);
+	}
 	
 	//let laccel = vlen(accel);
 	//if ( laccel > 40. ) dt = framerate; // finer movement at higher accelerations
