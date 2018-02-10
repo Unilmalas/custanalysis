@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<canvas id="gc" width="400" height="400"></canvas>
+<script>
+'use strict';
+
+window.onload=function() {
+	var canv=document.getElementById("gc");
+	var ctx=canv.getContext("2d");
+	setInterval(game0, 1000 * framerate, canv, ctx); // calls a function or evaluates an expression at specified intervals
+}
+
+function Vec(x, y) {
+	this.x = x;
+	this.y = y;
+}
+
+Vec.prototype.set = function(a) {
+	this.x += a.x;
+	this.y += a.y;
+}
+
+Vec.prototype.vadd = function(a, low, high) {
+	this.x += a.x;
+	this.y += a.y;
+	if (~~this.x > high) this.x=high*Math.sign(this.x);
+	if (~~this.y > high) this.y=high*Math.sign(this.y);
+	if (~~this.x < low) this.x=low*Math.sign(this.x);
+	if (~~this.y < low) this.y=low*Math.sign(this.y);
+}
+
+Vec.prototype.vsub = function(a) {
+	this.x -= a.x;
+	this.y -= a.y;
+}
+
+Vec.prototype.vlen = function() {
+	return Math.sqrt(( this.x * this.x ) + ( this.y * this.y ));
+}
+
+Vec.prototype.vmultc = function(c) {
+	this.x *= c;
+	this.y *= c;
+}
+
+Vec.prototype.vnorm = function() {
+	let vl = this.vlen();
+	if ( vl > 0 ) {
+		this.x /= vl;
+		this.y /= vl;
+	}
+}
+
+function Author(pos, vel, weight) {
+	this.pos = new Vec(pos.x, pos.y);
+	this.vel = new Vec(vel.x, vel.y);
+	this.weight = weight;
+	this.connect = [];
+	// need weight of connections
+}
+
+Author.prototype.addConn = function(a) {
+	this.connect.push(a);
+}
+
+Author.prototype.setpos = function(a) {
+	this.pos.set(a);
+}
+
+Author.prototype.getpos = function() {
+	return this.pos;
+}
+
+Author.prototype.distto = function(a) {
+	let dist = new Vec(this.pos.x,this.pos.y);
+	dist.vsub(a.pos);
+	return dist;
+}
+
+Author.prototype.setvel = function(a) {
+	this.vel.set(a);
+}
+
+Author.prototype.setwgt = function(w) {
+	this.weight = w;
+}
+
+Author.prototype.updpos = function(oauth, dt, x0, y0) { // multiplies velocity with acceleration and dt and then updates position by v * dt
+	let dpush = this.distto(oauth);
+	let absd = dpush.vlen();
+	if ( absd < 200. )
+		absd = 60. / absd / absd / absd; // push force like gravitation
+	else
+		absd = 0.;
+	dpush.vmultc(absd);
+	// add a small central force to keep authors on one page
+	let dctrl = new Vec(x0, y0);
+	dctrl.vsub(this.pos);
+	//absd = dctrl.vlen();
+	absd = 0.0001; // pull force like gravitation
+	dctrl.vmultc(absd);
+	let accdt = new Vec(dpush.x, dpush.y);
+	accdt.vadd(dctrl, -6, 6);
+	// consider pull from connections
+	let nconn = this.connect.length;
+	for ( let i=0; i<nconn; i++ ) {
+		let dpull = this.distto(this.connect[i]);
+		absd = dpull.vlen();
+		absd = - 0.000001 * absd; // pull force like spring
+		dpull.vmultc(absd);
+		accdt.vadd(dpull, -6, 6); // add push and pull
+	}
+	accdt.vmultc(dt);
+	this.vel.vadd(accdt, -6, 6);
+	accdt.set(this.vel);
+	accdt.vmultc(dt);
+	this.pos.vadd(accdt, 0, 400);
+}
+
+Author.prototype.draw = function(ctx) {
+	ctx.beginPath();
+	ctx.arc(this.pos.x, this.pos.y, this.weight, 0, 2*Math.PI); // draw the author
+	ctx.stroke();
+	// draw connections
+	let nconn = this.connect.length;
+	for ( let i=0; i<nconn; i++ ) {
+		ctx.beginPath();
+		ctx.moveTo(this.pos.x, this.pos.y);
+		ctx.lineTo(this.connect[i].pos.x, this.connect[i].pos.y); // draw the connection
+		ctx.stroke();
+	}
+}
+
+var framerate = 1/10;
+var authors = [];
+authors.push(new Author(new Vec(50.,50.), new Vec(1.,1.), 8));
+authors.push(new Author(new Vec(200.,200.), new Vec(-1.,-1.), 5));
+authors.push(new Author(new Vec(200.,50.), new Vec(0.,0.), 5));
+authors[0].addConn(authors[1]);
+authors[1].addConn(authors[0]);
+
+function game0(canv, ctx) {
+
+	let dt = 1.0;
+	for ( let i=0; i<3; i++ ) {
+		for ( let j=0; j<3; j++ ) {
+			if ( i !== j )
+				authors[i].updpos(authors[j], dt, 200, 200);
+		}
+	}
+	//authors[0].updpos(authors[1], dt);
+	
+	ctx.fillStyle="black";
+	ctx.fillRect(0,0,canv.width,canv.height); // draw background
+	ctx.strokeStyle="lime";
+	
+	authors[0].draw(ctx);
+	authors[1].draw(ctx);
+	authors[2].draw(ctx);
+	
+	//let laccel = vlen(accel);
+	//if ( laccel > 40. ) dt = framerate; // finer movement at higher accelerations
+	//else if ( laccel > 10. ) dt = framerate * 2.0;
+	//else dt = 1.0;
+
+}
+
+function randInt( maxN ) {
+	return ~~( Math.random() * maxN );     // returns a number between 0 and maxN-1
+}
+
+function randIntnp( maxN ) {
+	return ~~( Math.random() * 2 * maxN ) - maxN;     // returns a number between -(maxN-1) and maxN-1
+}
+
+</script>
+</html>
