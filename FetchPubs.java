@@ -72,7 +72,7 @@ public class FetchPubs {
 				for (String resStr: strTemp.split(strRslt)) {
 					linkPos = resStr.indexOf(strPubLink);
 					if ( linkPos > -1 ) {
-						linkStr = resStr.substring(linkPos+8, linkPos+24); // link
+						linkStr = resStr.substring(linkPos+8, linkPos+23); // link
 						//System.out.println(linkStr);
 					}
 					titlePos = resStr.indexOf(strDocTitle);
