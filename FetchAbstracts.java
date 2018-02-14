@@ -88,7 +88,9 @@ public class FetchAbstracts {
 						// identifier: <div class="keywords">
 						if ( keyPos > -1 ) {
 							workStr = strTemp.substring(keyPos+23, strTemp.length()-1);
-							keyStr = strTemp.substring(keyPos+23, workStr.indexOf("</div>")+keyPos+23); // link
+							int dividx = workStr.indexOf("</div>");
+							if (dividx > 0)
+								keyStr = strTemp.substring(keyPos+23, dividx+keyPos+23); // link
 							//System.out.println(keyStr);
 							tempA.keywords = keyStr;
 						}
