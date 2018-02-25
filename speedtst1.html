@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>JavaScript Speed Test</h2>
+
+<p>xxxxxxxxxxxxxxx</p>
+
+<button onclick="myFunction()">Try it</button>
+
+<p id="demo0"></p>
+
+<p id="demo1"></p>
+
+<script>
+'use strict';
+
+function myFunction() {
+	let t0 = performance.now();
+	for ( let i=0; i<5000; i++) tst6();
+	let t1 = performance.now();
+	console.log("Call to A took " + (t1 - t0) + " milliseconds. " + tst6())
+	
+	document.getElementById("demo0").innerHTML = "call to A: " + (t1 - t0);
+	
+	t0 = performance.now();
+	for ( let i=0; i<5000; i++) tst7();
+	t1 = performance.now();
+	console.log("Call to B took " + (t1 - t0) + " milliseconds. " + tst7())
+	
+	document.getElementById("demo1").innerHTML = "call to B: " + (t1 - t0);
+	
+}
+
+// variable declarations:
+// always declare with const by default, with let if you need to mutate or reassign it
+// vartype	scope		reassign	mutable		temporalDeadZone
+// const	block		no			yes			yes
+// let		block		yes			yes			yes
+// var		function	yes			yes			no
+
+// functional style programming
+function tst0() {
+	let list = [1,2,3,4,5];
+	for (let i=0; i<list.length; i++) { // iteration code - this seems to be slightly faster than the map-version
+		list[i]= list[i]+1; // worker code
+	}
+	return list;
+}
+
+function tst1() {
+	let list = [1,2,3,4,5];
+	list = list.map(function(cval) { // pure function: it always evaluates to the same output + does not cause any observable side effects
+	// list.map(function(cval); { - we do this in 2017, no function keyword any more
+	// list.map(cval=>{cval+1}); - or even this, but it is an anonymous function, so might try
+	// let addOne = cval=>{cval+1}; list.map(addOne);
+		return cval+1;
+	}); // never need to write another for-loop again...
+	//let addOne = cval=>{cval+1};
+	//list.map(addOne);
+	return list;
+}
+
+function tst2() {
+	let list = [1,2,3,4,5];
+	for (let i=0; i<list.length; i++) { // iteration code - this seems to be slightly faster than the map-version
+		if ( list[i] % 2 === 0 )
+			list.splice(i, 1);
+	}
+	return list;
+}
+
+function tst3() { // this is 2 to 3 times faster than the version with splice
+	let list = [1,2,3,4,5];
+	list = list.filter(n => n % 2 === 0);
+	return list;
+}
+
+function tst4() { // this is 2 to 3 times faster than the version with reduce
+	let list = [1,2,3,4,5];
+	let total = 0;
+	for (let i=0; i<list.length; i++) { // iteration code - this seems to be slightly faster than the map-version
+		total += list[i];
+	}
+	return total;
+}
+
+function tst5() { 
+	let list = [1,2,3,4,5];
+	list = list.reduce((totl, cval) => totl + cval, 0);
+	return list;
+}
+
+function tst6() { // this is 2 to 3 times faster than the version with fill (about the same if push() is used vs. a defined array with fill()
+	let list = [0,0,0,0,0];
+	for (let i=0; i<5; i++) { // iteration code - this seems to be slightly faster than the map-version
+		//list.push(1);
+		list[i] = 1;
+	}
+	return list;
+}
+
+function tst7() { 
+	let list = [0,0,0,0,0];
+	list = list.fill(1, 0, 5);
+	return list;
+}
+
+function spread0() { // spread: expand elements into an iterable (i.e. array)
+	const arr0 = [1,2,3];
+	const arr1 = [4,5,6];
+	
+	const arr2 = [arr0, arr1];
+	const arr3 = [...arr0, ...arr1,7,8];
+	
+	console.log(arr2);
+	console.log(arr3);
+	
+	return;
+}
+
+function defaultVal(x = 10) { // setting default values on functions
+	return x;
+}
+
+// functional programming
+// speed tests: filter is faster than the "manual" version, map and reduce are slower
+function mapFltrRed() { // functional programming to avoid for, forEach
+	const numbers = [0,1,2,3,4,5,6];
+	const doubleN = numbers.map(n => n*2);
+	const evenN = numbers.filter(n => n % 2 === 0);
+	const sumN = numbers.reduce((totl, cval) => totl + cval, 0); // array.reduce(function(tot, currentVal, currentInd, arr), initialVal)
+	
+	console.log("dbl: " + doubleN + " even: " + evenN + " sum: " + sumN);
+}
+
+</script>
+
+</body>
+</html>
