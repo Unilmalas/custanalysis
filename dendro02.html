@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<canvas id="myCanvas" width="400" height="300" style="border:1px solid #d3d3d3;">
+Your browser does not support the HTML5 canvas tag.</canvas>
+
+<script>
+
+var simmat = 	[[1., 0.8, 0.3],
+				[0.8, 1., 0.4],
+				[0.3, 0.4, 1.]];
+var denwords = ["this", "that", "else"];
+var denlist = [];
+const xrange = 200;
+const xwords = 250;
+
+var c = document.getElementById("myCanvas");
+var ctx = c.getContext("2d");
+
+ctx.font = "10px Arial";
+ctx.fillText("Hello World!", 10, 50);
+
+for ( let i=0; i<simmat[0].length; i++ ) {
+	for ( let j=i+1; j<simmat[0].length; j++ ) {
+		//console.log(simmat[i][j]);
+		denlist.push( new dendro( denwords[i], denwords[j], simmat[i][j] ) );
+	}
+}
+
+denlist.sort(function(a, b) {
+	return b.dist - a.dist; // sort descending
+});
+
+console.log(denlist);
+
+for ( let i=0; i<denlist.length; i++ ) {
+	if ( !denlist[i].linked ) {
+		drawlink(denlist[i], xwords, 50+i*20, 20, ctx);
+		denlist[i].drawtext(xwords, 50+i*20, 20);
+	}
+}
+
+
+function dendro(word0, word1, dist) { // dendrogrma list entries
+	this.word0 = word0;
+	this.word1 = word1;
+	this.dist = dist;
+	this.xcoord = map( dist, 0, 1, xrange, 0); // x-coordinate of dendrogram linking the two words
+	this.linked = false; // indicates drawn link
+	
+	this.drawtext = function(xw, yw, dy) {
+		ctx.fillText(word0, xw, yw);
+		ctx.fillText(word1, xw, yw+dy);
+	}
+}
+
+function drawlink(dl, x0, y0, dy, ctx) {
+	ctx.beginPath();
+	ctx.moveTo(x0, y0);
+	ctx.lineTo(x0 - dl.xcoord, y0);
+	ctx.lineTo(x0 - dl.xcoord, y0+dy);
+	ctx.lineTo(x0, y0+dy);
+	ctx.stroke();
+	dl.linked = true;
+}
+
+function map( value, start0, stop0, start1, stop1 ) {
+	return ((value-start0)/(stop0-start0))*(stop1-start1)+start1;
+}
+
+function randInt( maxN ) {
+	return ~~( Math.random() * maxN );     // returns a number between 0 and maxN-1
+}
+
+function randIntnp( maxN ) {
+	return ~~( Math.random() * 2 * maxN ) - maxN;     // returns a number between -(maxN-1) and maxN-1
+}
+
+</script>
+</body>
+</html>
