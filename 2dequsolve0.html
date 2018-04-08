@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<canvas id="myCanvas" width="400" height="300" style="border:1px solid #d3d3d3;">
+Your browser does not support the HTML5 canvas tag.</canvas>
+
+<script>
+'use strict';
+
+// 2d equation solver from 3blue1brown
+
+var c = document.getElementById("myCanvas");
+var ctx = c.getContext("2d");
+const drawgrads = true; // draw gradients along curve
+const maxcnotc = 5; // max number of colors (=directions) not on curve
+
+ctx.font = "10px Arial";
+ctx.fillText("Hello World!", 10, 50);
+
+var myc = new curve( 120, 200, 250, 40, 40 );
+console.log(myc.colrange(f, ctx));
+console.log(myc.windingf(f));
+myc = myc.split(f, ctx);
+myc = myc.split(f, ctx);
+myc = myc.split(f, ctx);
+myc = myc.split(f, ctx);
+myc = myc.split(f, ctx);
+
+function f( xory, x, y ) {
+	x /= 120; // just to bring it range for canvas size
+	y /= 180;
+	x -= 0.5;
+	y -= 0.2;
+	if ( xory === 0 )
+		return 1. / ( x*x + y*y ) - x;
+	else
+		return 1. / ( x*x + y*y ) - y;
+}
+
+function f2( xory, x, y ) {
+	x /= 100; // just to bring it range for canvas size
+	y /= 100;
+	if ( xory === 0 )
+		return y * Math.exp( x ) - y * y;
+	else
+		return Math.sin( Math.abs( x * y ) ) - 2. * y;
+}
+
+function curve( x0, y0, x1, y1, n ) { // a curve (here this is always rectangular, from lower left x0 to upper right x1)
+	this.x0 = x0;
+	this.y0 = y0;
+	if ( x0 === x1 ) x1 = x0 + 1;
+	if ( y0 === y1 ) y1 = y0 - 1;
+	this.x1 = x1;
+	this.y1 = y1;
+	this.n = n;		// resolution, i.e. number of colors and steps of winding number
+	this.clen = 2. * ((this.x1 - this.x0) + (this.y0 - this.y1)); // curve length
+	this.ds = this.clen / n; // step length
+	this.nx = (this.x1 - this.x0) / this.ds; // number of steps x
+	this.ny = (this.y0 - this.y1) / this.ds; // number of steps y
+	
+	this.color = range(n, 1);
+	this.winding = 0;
+	
+	this.nextx = function(x, s) { // next point on the curve x-direction
+		return x + this.ds * s;
+	}
+	
+	this.nexty = function(y, s) { // next point on the curve y-direction
+		return y - this.ds * s;
+	}
+	
+	// for functions: see if all colors hit and determine winding number
+	this.getcolorf = function(f, pt) { // get color of given function at point
+		return pt.dirfn(f, this.n, true);
+	}
+	
+	this.getdirf = function(f, pt) { // get direction of given function at point
+		let dir = pt.dirfn(f, this.n, false);
+		if ( dir < 0. ) dir += 2. * Math.PI;
+		return dir;
+	}
+	
+	this.colrange = function(f, ctx) { // check for color range along curve for function f
+		let cpt = new point(this.x0, this.y0);
+		let sx = 0;
+		let sy = 0;
+		for ( let s=0; s<n; s++ ) { // walk along curve and mark the colors we find from main color array x-dir
+			let ccol = this.getcolorf(f, cpt);
+			if ( s >= 0 && s < this.ny ) sy++;
+			else if ( s >= this.ny && s < (this.nx + this.ny) ) sx++;
+			else if ( s >= (this.nx + this.ny) && s < (this.nx + 2 * this.ny) ) sy--;
+			else sx--;
+			/*this.color.splice(this.color.findIndex(function(cval, indx) {
+				//console.log('ccol: ' + ccol + ' indx: ' + indx)
+				//console.log(ccol === indx)
+				return ccol === indx;
+			}, ccol), 1);*/
+			this.color[Math.round(ccol)] = 0; // color appears in curve -> remove from potential colors
+			if ( Math.round(ccol) > 1 ) this.color[Math.round(ccol)-1] = 0;
+			if ( Math.round(ccol) < this.color.length-1 ) this.color[Math.round(ccol)+1] = 0;
+			//console.log('ccol: ' + ccol.toPrecision(2) + ' indx: ' + s)
+			cpt.set(this.nextx(this.x0, sx), this.nexty(this.y0, sy)); // move to next point
+			//console.log('x: ' + sx + ' y: ' + sy)
+			//console.log('x: ' + this.nextx(cpt.x, sx) + ' y: ' + this.nexty(cpt.y, sy))
+			if ( drawgrads ) {
+				ctx.beginPath();
+				ctx.moveTo(cpt.x, cpt.y);
+				//console.log('x: ' + cpt.x.toPrecision(4) + ' y: ' + cpt.y.toPrecision(4))
+				let linetop = new point(cpt.x, cpt.y).dirf(f);
+				//console.log(linetop.x + ' : ' + linetop.y);
+				ctx.lineTo(cpt.x+linetop.x*20/linetop.len(), cpt.y+linetop.y*20/linetop.len());
+				ctx.stroke();
+			}
+		}
+		//return this.color.length; // returns 0 if all colors hit along curve, >0 otherwise
+		let offcolors = 0; // counts colors not on curve
+		this.color.some ( function( cval, idx, arr ) {
+			if ( cval > 0 ) {
+				offcolors++;
+			}
+		}, offcolors );
+		return offcolors; // returns number of colors not on curve
+	}
+	
+	this.windingf = function(f) { // winding number of given function along curve
+		// need to check here: how often does the direction vector rotate while walking along the curve
+		let cpt = new point(this.x0, this.y0);
+		let sx = 0;
+		let sy = 0;
+		let cdir = this.getdirf(f, cpt);
+		let lastdir = cdir;
+		let dirtot = 0.;
+		for ( let s=0; s<n; s++ ) { // walk along curve and count the direction turns
+			if ( s >= 0 && s < this.ny ) sy++;
+			else if ( s >= this.ny && s < (this.nx + this.ny) ) sx++;
+			else if ( s >= (this.nx + this.ny) && s < (this.nx + 2 * this.ny) ) sy--;
+			else sx--;
+			cpt.set(this.nextx(this.x0, sx), this.nexty(this.y0, sy)); // move to next point
+			lastdir = cdir;
+			cdir = this.getdirf(f, cpt);
+			//console.log('cdir: ' + cdir);
+			dirtot += ( cdir - lastdir ); // add direction
+			//console.log('dirtot: ' + dirtot);
+			if ( Math.round( dirtot ) === 0 ) this.winding++;
+		}
+		//this.winding = Math.round( dirtot / ( 2. * Math.PI ) );
+		return this.winding; // returns winding number = count of direction turns
+	}
+	
+	this.split = function(f, ctx) { // returns a new curve after split
+		// always split along longer edge
+		let dx = this.x1 - this.x0;
+		let dy = this.y0 - this.y1; // careful: y in reverse!
+		// todo: make this more efficient: check color + wdg -> if NOT ok immediately split the other curve and run check on 1/2
+		//console.log('dx: ' + dx + ' dy: ' + dy);
+		let xn=0;
+		let yn=0;
+		if ( dx > dy ) {
+			xn = this.x0 + dx/2;
+			yn = this.y1;
+		} else {
+			xn = this.x1;
+			yn = this.y0 - dy/2; // y reverse!
+		}
+		let c0 = new curve( this.x0, this.y0, xn, yn, this.n );
+		//console.log('x0: ' + c0.x0 + ' y0: ' + c0.y0);
+		//console.log('x1: ' + c0.x1 + ' y1: ' + c0.y1);
+		//console.log('xn: ' + xn + ' yn: ' + yn);
+		console.log(c0.colrange(f, ctx));
+		console.log(c0.windingf(f));
+		return c0;
+	}
+}
+
+function point(x=0, y=0) { // a point
+	this.x = x;
+	this.y = y;
+	
+	this.set = function(x, y) {
+		this.x = x;
+		this.y = y;
+	}
+	
+	this.len = function() { // length
+		return Math.sqrt( this.x * this.x + this.y * this.y );
+	}
+	
+	this.rad = function() { // direction in rad
+		return Math.atan( this.y / ( this.len() + 0.00000001) ); // to prevent overflow - not pretty
+	}
+	
+	this.dir = function(n) { // direction mapped to 0-n
+		return map( this.rad(), -Math.PI, Math.PI, 0, n );
+	}
+	
+	this.applyf = function(f) {
+		this.x = f(0, this.x, this.y );
+		this.y = f(1, this.x, this.y );
+	}
+	
+	this.dirf = function(f) {
+		return new point( f(0, this.x, this.y ), f(1, this.y, this.y ) );
+	}
+	
+	this.dirfn = function(f, n, mapped) {
+		let xx = f(0, this.x, this.y );
+		let yy = f(1, this.x, this.y );
+		//let radd = Math.atan( yy / ( Math.sqrt( xx * xx + yy * yy ) + 0.00000001 ) ); // to prevent overflow
+		let radd = Math.atan2( yy , xx ); // note: atan2 takes y as first argument
+		//console.log('x: ' + xx.toPrecision(2) + ' y: ' + yy.toPrecision(2) + ' rad: ' + radd.toPrecision(2))
+		if ( mapped )
+			return map( radd, -Math.PI, Math.PI, 0, n-1 );
+		else return radd;
+	}
+}
+
+// util functions
+
+function range(n, a) { // creates an array of n entries all set to a
+	let arr = [];
+	for ( let i=0; i<n; i++ )
+		arr.push(a);
+	return arr;
+}
+
+function map( value, start0, stop0, start1, stop1 ) {
+	return ((value-start0)/(stop0-start0))*(stop1-start1)+start1;
+}
+
+function randInt( maxN ) {
+	return ~~( Math.random() * maxN );     // returns a number between 0 and maxN-1
+}
+
+function randIntnp( maxN ) {
+	return ~~( Math.random() * 2 * maxN ) - maxN;     // returns a number between -(maxN-1) and maxN-1
+}
+
+</script>
+</body>
+</html>
