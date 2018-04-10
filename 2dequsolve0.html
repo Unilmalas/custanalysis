@@ -26,6 +26,9 @@ myc = myc.split(f, ctx);
 myc = myc.split(f, ctx);
 myc = myc.split(f, ctx);
 myc = myc.split(f, ctx);
+myc = myc.split(f, ctx);
+myc = myc.split(f, ctx);
+console.log('x: ' + (myc.x0 / 120 - 0.5) + ' y: ' + (myc.y0 / 180 - 0.2) );
 
 function f( xory, x, y ) {
 	x /= 120; // just to bring it range for canvas size
@@ -82,7 +85,7 @@ function curve( x0, y0, x1, y1, n ) { // a curve (here this is always rectangula
 		return dir;
 	}
 	
-	this.colrange = function(f, ctx) { // check for color range along curve for function f
+	this.colrange = function(f, ctx) { // check for color range along curve for function f (determine winding with this)
 		let cpt = new point(this.x0, this.y0);
 		let sx = 0;
 		let sy = 0;
@@ -124,7 +127,7 @@ function curve( x0, y0, x1, y1, n ) { // a curve (here this is always rectangula
 		return offcolors; // returns number of colors not on curve
 	}
 	
-	this.windingf = function(f) { // winding number of given function along curve
+	this.windingf = function(f) { // winding number of given function along curve (we do this with color)
 		// need to check here: how often does the direction vector rotate while walking along the curve
 		let cpt = new point(this.x0, this.y0);
 		let sx = 0;
@@ -144,7 +147,7 @@ function curve( x0, y0, x1, y1, n ) { // a curve (here this is always rectangula
 			dirtot += ( cdir - lastdir ); // add direction
 			//console.log('dirtot: ' + Math.round(dirtot*10.).toPrecision(4) + ' winding: ' + this.winding);
 			// this is still not ideal - better way to find the winding number?
-			if ( s>n/4 && Math.round( dirtot * 10. ) === 0 && ( cdir - lastdir ) > 0.001 ) this.winding++;
+			if ( s>0 && Math.round( dirtot * 10. ) === 0 && ( cdir - lastdir ) > 0. ) this.winding++;
 		}
 		//this.winding += Math.round( dirtot / ( 2. * Math.PI ) );
 		return this.winding; // returns winding number = count of direction turns
@@ -163,7 +166,7 @@ function curve( x0, y0, x1, y1, n ) { // a curve (here this is always rectangula
 			c0 = new curve( this.x0, this.y0 - dy/2, this.x1, this.y1, this.n );
 		}
 		let c0c = c0.colrange(f, ctx);
-		let c0w = c0.windingf(f);		
+		//let c0w = c0.windingf(f);		
 		let xn=0;
 		let yn=0;
 		if ( dx > dy ) {
@@ -175,14 +178,14 @@ function curve( x0, y0, x1, y1, n ) { // a curve (here this is always rectangula
 		}
 		let c1 = new curve( this.x0, this.y0, xn, yn, this.n );
 		let c1c = c1.colrange(f, ctx);
-		let c1w = c1.windingf(f);
-		console.log('c0c: ' + c0c + ' c0w: ' + c0w + ' c1c: ' + c1c + ' c1w: ' + c1w);
-		if ( c0c > 0 && c0w > c1w ) {
-			console.log('choose c0: ' + c0w);
+		//let c1w = c1.windingf(f);
+		//console.log('c0c: ' + c0c + ' c0w: ' + c0w + ' c1c: ' + c1c + ' c1w: ' + c1w);
+		if ( c0c > 0 && c0c < c1c ) {
+			console.log('choose c0: ' + c0c);
 			return c0;
 		}
-		if ( c1c > 0 && c1w > c0w ) {
-			console.log('choose c1: ' + c1w);
+		if ( c1c > 0 && c1c < c0c ) {
+			console.log('choose c1: ' + c1c);
 			return c1;
 		}
 		return -1;
@@ -227,7 +230,7 @@ function point(x=0, y=0) { // a point
 		//console.log('x: ' + xx.toPrecision(2) + ' y: ' + yy.toPrecision(2) + ' rad: ' + radd.toPrecision(2))
 		if ( mapped )
 			return map( radd, -Math.PI, Math.PI, 0, n-1 );
-		else return radd + Math.PI; // atan2 returns -PI to +PI, we want 0 to 2 PI
+		else return radd; // atan2 returns -PI to +PI, we want 0 to 2 PI
 	}
 }
 
