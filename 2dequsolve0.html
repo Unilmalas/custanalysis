@@ -19,8 +19,8 @@ ctx.font = "10px Arial";
 ctx.fillText("Hello World!", 10, 50);
 
 var myc = new curve( 120, 200, 250, 40, 40 );
-console.log(myc.colrange(f, ctx));
-console.log(myc.windingf(f));
+//console.log(myc.colrange(f, ctx));
+//console.log(myc.windingf(f));
 myc = myc.split(f, ctx);
 myc = myc.split(f, ctx);
 myc = myc.split(f, ctx);
@@ -140,12 +140,13 @@ function curve( x0, y0, x1, y1, n ) { // a curve (here this is always rectangula
 			cpt.set(this.nextx(this.x0, sx), this.nexty(this.y0, sy)); // move to next point
 			lastdir = cdir;
 			cdir = this.getdirf(f, cpt);
-			//console.log('cdir: ' + cdir);
+			//console.log('cdir: ' + cdir.toPrecision(4));
 			dirtot += ( cdir - lastdir ); // add direction
-			//console.log('dirtot: ' + dirtot);
-			if ( Math.round( dirtot ) === 0 ) this.winding++;
+			//console.log('dirtot: ' + Math.round(dirtot*10.).toPrecision(4) + ' winding: ' + this.winding);
+			// this is still not ideal - better way to find the winding number?
+			if ( s>n/4 && Math.round( dirtot * 10. ) === 0 && ( cdir - lastdir ) > 0.001 ) this.winding++;
 		}
-		//this.winding = Math.round( dirtot / ( 2. * Math.PI ) );
+		//this.winding += Math.round( dirtot / ( 2. * Math.PI ) );
 		return this.winding; // returns winding number = count of direction turns
 	}
 	
@@ -155,6 +156,14 @@ function curve( x0, y0, x1, y1, n ) { // a curve (here this is always rectangula
 		let dy = this.y0 - this.y1; // careful: y in reverse!
 		// todo: make this more efficient: check color + wdg -> if NOT ok immediately split the other curve and run check on 1/2
 		//console.log('dx: ' + dx + ' dy: ' + dy);
+		let c0;
+		if ( dx > dy ) {
+			c0 = new curve( this.x0 + dx/2, this.y0, this.x1, this.y1, this.n );
+		} else {
+			c0 = new curve( this.x0, this.y0 - dy/2, this.x1, this.y1, this.n );
+		}
+		let c0c = c0.colrange(f, ctx);
+		let c0w = c0.windingf(f);		
 		let xn=0;
 		let yn=0;
 		if ( dx > dy ) {
@@ -164,13 +173,19 @@ function curve( x0, y0, x1, y1, n ) { // a curve (here this is always rectangula
 			xn = this.x1;
 			yn = this.y0 - dy/2; // y reverse!
 		}
-		let c0 = new curve( this.x0, this.y0, xn, yn, this.n );
-		//console.log('x0: ' + c0.x0 + ' y0: ' + c0.y0);
-		//console.log('x1: ' + c0.x1 + ' y1: ' + c0.y1);
-		//console.log('xn: ' + xn + ' yn: ' + yn);
-		console.log(c0.colrange(f, ctx));
-		console.log(c0.windingf(f));
-		return c0;
+		let c1 = new curve( this.x0, this.y0, xn, yn, this.n );
+		let c1c = c1.colrange(f, ctx);
+		let c1w = c1.windingf(f);
+		console.log('c0c: ' + c0c + ' c0w: ' + c0w + ' c1c: ' + c1c + ' c1w: ' + c1w);
+		if ( c0c > 0 && c0w > c1w ) {
+			console.log('choose c0: ' + c0w);
+			return c0;
+		}
+		if ( c1c > 0 && c1w > c0w ) {
+			console.log('choose c1: ' + c1w);
+			return c1;
+		}
+		return -1;
 	}
 }
 
@@ -212,7 +227,7 @@ function point(x=0, y=0) { // a point
 		//console.log('x: ' + xx.toPrecision(2) + ' y: ' + yy.toPrecision(2) + ' rad: ' + radd.toPrecision(2))
 		if ( mapped )
 			return map( radd, -Math.PI, Math.PI, 0, n-1 );
-		else return radd;
+		else return radd + Math.PI; // atan2 returns -PI to +PI, we want 0 to 2 PI
 	}
 }
 
