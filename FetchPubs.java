@@ -1,4 +1,3 @@
-
 import java.io.*;
 //import java.net.URL;
 //import java.net.HttpURLConnection;
@@ -233,7 +232,7 @@ public class FetchPubs {
 			for (Map.Entry<String, Publication> entry : pubList.entrySet()) {
 				//System.out.println("Key: " + entry.getKey() + ". Value: " + entry.getValue().link);
 				//System.out.println(entry.getKey() + ";" + entry.getValue().link);
-				writer.println(entry.getKey() + ";" + entry.getValue().link);
+				writer.println(entry.getKey() + ";" + entry.getValue().link + ";" + entry.getValue().year);
 			}
 			writer.close();
 		} catch (IOException e) {
