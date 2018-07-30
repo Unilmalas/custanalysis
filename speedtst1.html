@@ -15,20 +15,36 @@
 <script>
 'use strict';
 
+var testtxt = 'Wohl möglich, daß Aschenbach es bei seiner halb zerstreuten, halb inquisitiven Musterung des Fremden an Rücksicht hatte fehlen lassen; denn plötzlich ward er gewahr, daß jener seinen Blick erwiderte und zwar so kriegerisch, so gerade ins Auge hinein, so offenkundig gesonnen, die Sache aufs Äußerste zu treiben und den Blick des andern zum Abzug zu zwingen, daß Aschenbach, peinlich berührt, sich abwandte und einen Gang die Zäune entlang begann, mit dem beiläufigen Entschluß, des Menschen nicht weiter achtzuhaben. Er hatte ihn in der nächsten Minute vergessen. Mochte nun aber das Wandererhafte in der Erscheinung des Fremden auf seine Einbildungskraft gewirkt haben oder sonst irgendein physischer oder seelischer Einfluß im Spiele sein: eine seltsame Ausweitung seines Innern ward ihm ganz überraschend bewußt, eine Art schweifender Unruhe, ein jugendlich durstiges Verlangen in die Ferne, ein Gefühl, so lebhaft, so neu oder doch so längst entwöhnt und verlernt, daß er, die Hände auf dem Rücken und den Blick am Boden, gefesselt stehen blieb, um die Empfindung auf Wesen und Ziel zu prüfen. Es war Reiselust, nichts weiter; aber wahrhaft als Anfall auftretend und ins Leidenschaftliche, ja bis zur Sinnestäuschung gesteigert. Er sah nämlich, als Beispiel gleichsam für alle Wunder und Schrecken der mannigfaltigen Erde, die seine Begierde sich auf einmal vorzustellen trachtete,—sah wie mit leiblichem Auge eine ungeheuere Landschaft, ein tropisches Sumpfgebiet unter dickdunstigem Himmel, feucht, üppig und ungesund, eine von Menschen gemiedene Urweltwildnis aus Inseln, Morästen und Schlamm führenden Wasserarmen. Die flachen Eilande, deren Boden mit Blättern, so dick wie Hände, mit riesigen Farnen, mit fettem, gequollenem und abenteuerlich blühendem Pflanzenwerk überwuchert war, sandten haarige Palmenschäfte empor, und wunderlich ungestalte Bäume, deren Wurzeln dem Stamm entwuchsen und sich durch die Luft in den Boden, ins Wasser senkten, bildeten verworrene Waldungen. Auf der stockenden, grünschattig spiegelnden Flut schwammen, wie Schüsseln groß, milchweiße Blumen; Vögel von fremder Art, hochschultrig, mit unförmigen Schnäbeln, standen auf hohen Beinen im Seichten und blickten unbeweglich zur Seite, während durch ausgedehnte Schilffelder ein klapperndes Wetzen und Rauschen ging, wie durch Heere von Geharnischten; dem Schauenden war es, als hauchte der laue, mephitische Odem dieser geilen und untauglichen Öde ihn an, die in einem ungeheuerlichen Zustande von Werden oder Vergehen zu schweben schien, zwischen den knotigen Rohrstämmen eines Bambusdickichts glaubte er einen Augenblick die phosphoreszierenden Lichter des Tigers funkeln zu sehen—und fühlte sein Herz pochen vor Entsetzen und rätselhaftem Verlangen. Dann wich das Gesicht; und mit einem Kopfschütteln nahm Aschenbach seine Promenade an den Zäunen der Grabsteinmetzereien wieder auf.';
+var ttxtarr;
+
 function myFunction() {
 	let t0 = performance.now();
-	for ( let i=0; i<5000; i++) tst6();
+	//for ( let i=0; i<5000; i++) tan(0.3);
+	for ( let i=0; i<10000; i++) gcd(42, 16);
 	let t1 = performance.now();
-	console.log("Call to A took " + (t1 - t0) + " milliseconds. " + tst6())
+	console.log("Call to A took " + (t1 - t0) + " milliseconds. ")
 	
 	document.getElementById("demo0").innerHTML = "call to A: " + (t1 - t0);
 	
 	t0 = performance.now();
-	for ( let i=0; i<5000; i++) tst7();
+	//for ( let i=0; i<5000; i++) Math.tan(0.3);
+	for ( let i=0; i<10000; i++) gcd2(42, 16);
 	t1 = performance.now();
-	console.log("Call to B took " + (t1 - t0) + " milliseconds. " + tst7())
+	console.log("Call to B took " + (t1 - t0) + " milliseconds. ")
 	
 	document.getElementById("demo1").innerHTML = "call to B: " + (t1 - t0);
+	
+	ttxtarr = testtxt.split(" ");
+	let i = nextcore( 10, 3 );
+	//console.log(ttxtarr[10] + ' : ' + ttxtarr[i] + ' : ' + i);	
+	
+	//tst8();
+	
+	//console.log(gcd(65, 15));
+	//console.log(Math.atan()
+	
+	console.log(gcd(42, 16) + ' : loops -> : ' + gcd2(42, 16));
 	
 }
 
@@ -106,6 +122,13 @@ function tst7() {
 	return list;
 }
 
+function tst8() {
+	let tstobj = {};
+	tstobj['Wil'] = 23;
+	tstobj['Wil'+1] = 25;
+	console.log(tstobj);
+}
+
 function spread0() { // spread: expand elements into an iterable (i.e. array)
 	const arr0 = [1,2,3];
 	const arr1 = [4,5,6];
@@ -132,6 +155,62 @@ function mapFltrRed() { // functional programming to avoid for, forEach
 	const sumN = numbers.reduce((totl, cval) => totl + cval, 0); // array.reduce(function(tot, currentVal, currentInd, arr), initialVal)
 	
 	console.log("dbl: " + doubleN + " even: " + evenN + " sum: " + sumN);
+}
+
+function smart_fibonacci(n) {
+    let a = 0;
+	let b = 1;
+    for( let i=1; i<n; i++) {
+		a = b;
+		b = a+b;
+	}
+    return b;
+}
+
+function fibrec(x) {
+	//console.log(' f: ' + x);
+	if ( x > 1. ) return ( fibrec( x-1. ) + fibrec( x-2. ) );
+	return x;
+}
+
+function sqrtbab(a, niter) { // Babylonian method to calculate square root
+	let xn = a/4;
+	for ( let k=0; k<niter; k++ ) {
+		xn = xn + a / xn;
+		xn /= 2;
+	}
+	return xn;
+}
+
+function gcd(rkm2, rkm1) { // Euclidean algorithm for gcd
+	// rkm2 = qk * rkm1 + rk
+	let rk = rkm2 % rkm1;
+	if ( rk === 0 ) {
+		//console.log("rkm2: " + rkm2 + " rk: " + rk + " rkm1: " + rkm1)
+		return rkm1;
+	}
+	//console.log("rkm1: " + rkm1 + " rk: " + rk)
+	return gcd(rkm1, rk);
+}
+
+function gcd2(a, b) {
+	let a0 = a;
+	do {
+		let a0 = b;
+		b = a % b;
+		a = a0;
+	} while ( b > 0 );
+	return a;
+}
+
+function nextcore( icurrcore, winsize ) { // return the next core word from current core word
+	return icurrcore + 2 * winsize + 1;
+}
+
+function tan(x) { // taylor for tanx = x + x^3/3 + 2*x^5/15
+	let x3 = x*x*x;
+	let x5 = x3*x*x;
+	return x + x3*0.33333333 + x5*0.133333333
 }
 
 </script>
