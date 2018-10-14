@@ -1,0 +1,204 @@
+<!doctype html>
+<html>
+
+<canvas id="cnv" width="400" height="400"></canvas>
+
+<script>
+'use strict';
+
+var width = 400;
+var height = 400;
+var dborder = 50;
+
+var framerate = 1/10;
+
+window.onload=function() {
+	var canv=document.getElementById("cnv");
+	var ctx=canv.getContext("2d");
+	
+	wrapdots = new wrapdots(3);
+
+	setInterval(draw, 1000 * framerate, canv, ctx); // calls a function or evaluates an expression at specified intervals
+}
+
+function draw(canv, ctx) { // update frame
+	ctx.fillStyle="black";
+	ctx.fillRect(0, 0, canv.width, canv.height); // draw background
+	
+	wrapdots.run(ctx);
+}
+
+// wrapdots.js
+function wrapdots(nDots) { // create a dot cloud and wrap it
+    this.nDots = nDots; // number of dots
+	this.dots = []; // array with dot coords
+    this.conHull = []; // array containing the convex hull
+	
+    for (let i = 0; i < this.nDots; i++) { // fills dot array
+        this.dots.push(new Vec( dborder + randInt( width - 2*dborder ), dborder + randInt( height - 2*dborder ) ));
+    }
+	
+    this.run = function (ctx) { // run: try to wrap the cloud as efficiently as possible
+        for (let i = 0; i < this.nDots; i++) {
+            ctx.beginPath();
+			ctx.strokeStyle="lime";
+			ctx.arc(this.dots[i].x, this.dots[i].y, 3, 0, 2*Math.PI);
+			ctx.stroke();
+			ctx.font = "10px Arial";
+			ctx.fillStyle = "red";
+			ctx.fillText(''+i, this.dots[i].x+5, this.dots[i].y+5);
+        }
+		if ( this.conHull.length === 0 ) this.jarvis();
+    };
+	
+	this.jarvis = function () { // Jarvis march
+		let ihull = 0;
+		let xhull = width;
+		for (let i = 0; i < this.nDots; i++) {
+			if ( this.dots[i].x < xhull ) {
+				ihull = i;
+				xhull = this.dots[i].x;
+			}
+		}
+		this.conHull.push(ihull);
+		
+		//console.log('myatan 0: ' + (360*myatan( 1., 1. )/2./Math.PI).toPrecision(3));
+		//console.log('myatan 1: ' + (360*myatan( -1., 1. )/2./Math.PI).toPrecision(3));
+		//console.log('myatan 2: ' + (360*myatan( -1., -1. )/2./Math.PI).toPrecision(3));
+		//console.log('myatan 3: ' + (360*myatan( 1., -1. )/2./Math.PI).toPrecision(3));
+		
+		//console.log(ihull)
+		//console.log('j: ' + (this.conHull[0]+1) + ' to ' + (this.nDots+this.conHull[0]) );
+		//console.log(this.getdot(ihull))
+		
+		
+		let ctr = 0;
+		do {
+			let mpolar = 2.*Math.PI;
+			for (let j = this.conHull[0]+1; j < this.conHull[0]+this.nDots; j++) {
+				if ( this.conHull[ctr] !== this.getidx(j) ) {
+					//let tpolar = myatan( (this.dots[ihull].x-this.dots[j-this.conHull[0]-1].x), (this.dots[ihull].y-this.dots[j-this.conHull[0]-1].y) );
+					//let tpolar = myatan( (this.getdot(ihull).x-this.getdot(j-this.conHull[0]-1).x), (this.getdot(ihull).y-this.getdot(j-this.conHull[0]-1).y) );
+					let tpolar = myatan( (this.getdot(j).x-this.getdot(ctr).x), (this.getdot(j).y-this.getdot(ctr).y) );
+					console.log('hull: ' + this.conHull[ctr] + ' to: ' + this.getidx(j) + ' : ' + (360.*tpolar/2./Math.PI).toPrecision(3))
+					//console.log('tpolar: ' + (360.*tpolar/2./Math.PI).toPrecision(3) + ' mpolar: ' + (360.*mpolar/2./Math.PI).toPrecision(3))
+					if ( tpolar < mpolar ) {
+						mpolar = tpolar;
+						ihull = this.getidx(j);
+						console.log('   xxx0 ' + ihull + ' : ' + this.getidx(j) + ' at polar: ' + (360.*tpolar/2./Math.PI).toPrecision(3));
+					}
+				}
+			}
+			ctr++;
+			this.conHull.push(ihull);
+		//} while ( ihull !== this.conHull[0] && ctr <= this.nDots ); // until endpoint == P[0]: wrapped around to first hull point
+		} while ( ctr <= this.nDots ); // until endpoint == P[0]: wrapped around to first hull point
+		console.log(this.conHull);
+		
+		
+		
+		
+	};
+	
+	this.getdot = function (i) { // get dot from this.dots cyclically
+		let idx = i % this.dots.length;
+		return this.dots[idx];
+	};
+	
+	this.getidx = function (i) { // get dot from this.dots cyclically
+		return i % this.dots.length;
+	};
+}
+
+function sign(x) {
+    return typeof x === 'number' ? x ? x < 0 ? -1 : 1 : x === x ? 0 : NaN : NaN;
+}
+
+function myatan( dx, dy ) { // angle from lower y-axis
+	let p = Math.atan2( dy , dx );
+	if (dx<0.)
+		if (dy<0.)
+			return 3.*Math.PI/2. + p; // 3
+		else
+			return p - Math.PI/2.; // 4
+	else
+		if (dy<0.)
+			return p + 3.*Math.PI/2.; // 2
+	return p + 3.*Math.PI/2.; // 1 
+}
+
+// vector functions
+function Vec(x, y) {
+	this.x = x;
+	this.y = y;
+}
+
+function rndVec() {
+	let v = new Vec(randIntnp(10), randIntnp(10));
+	v.vnorm();
+	return v;
+}
+
+Vec.prototype.set = function(a) {
+	this.x += a.x;
+	this.y += a.y;
+}
+
+Vec.prototype.vadd = function(a) {
+	this.x += a.x;
+	this.y += a.y;
+}
+
+Vec.prototype.vsub = function(a) {
+	this.x -= a.x;
+	this.y -= a.y;
+}
+
+Vec.prototype.vlen = function() {
+	return Math.sqrt(( this.x * this.x ) + ( this.y * this.y ));
+}
+
+Vec.prototype.vmultc = function(c) {
+	this.x *= c;
+	this.y *= c;
+}
+
+Vec.prototype.vnorm = function() {
+	let vl = this.vlen();
+	if ( vl > 0 ) {
+		this.x /= vl;
+		this.y /= vl;
+	}
+}
+
+Vec.prototype.setMag = function(m) {
+	this.vnorm();
+	this.vmultc(m);
+}
+
+Vec.prototype.vlimit = function(l) {
+	if ( this.vlen() > l )
+		this.setMag(l);
+}
+
+// util functions
+
+function map(value, start0, stop0, start1, stop1) {
+	return ((value-start0)/(stop0-start0))*(stop1-start1)+start1;
+}
+
+function dist(x0, y0, x1, y1) {
+	let dx = x1 - x0;
+	let dy = y1 - y0;
+	return Math.sqrt(( dx * dx ) + ( dy * dy ));
+}
+
+function randInt( maxN ) {
+	return ~~( Math.random() * maxN );     // returns a number between 0 and maxN-1
+}
+
+function randIntnp( maxN ) {
+	return ~~( Math.random() * 2 * maxN ) - maxN;     // returns a number between -(maxN-1) and maxN-1
+}
+</script>
+</html>
